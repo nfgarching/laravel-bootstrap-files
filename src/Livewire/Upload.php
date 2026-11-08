@@ -25,7 +25,7 @@ class Upload extends Component
 
     public string $subject = '';
 
-    /** @var array<int, array{id: int, name: string, size: int, file_type: string, file_type_label: string}> */
+    /** @var array<int, array{id: int, name: string, size: int, file_type: string, file_type_label: string, own: bool, own_source: ?string, producer: ?string}> */
     public array $uploadedFiles = [];
 
     #[Validate(['files.*' => ['required', 'file', 'mimes:jpg,pdf,png', 'min:1', 'max:10240']])]
@@ -50,17 +50,36 @@ class Upload extends Component
 
         foreach ($this->files as $file) {
             $fileType = FileType::fromMimeType($file->getMimeType());
-            $fileItem = File::storeUpload($file, ['file_type' => $fileType->value]);
+            $fileItem = File::storeUpload($file);
             $this->uploadedFiles[] = [
                 'id' => $fileItem->id,
                 'name' => $fileItem->name,
                 'size' => $fileItem->size,
                 'file_type' => $fileType->value,
                 'file_type_label' => $fileType->label(),
+                'own' => $fileItem->isOwn(),
+                'own_source' => $fileItem->own()['source'] ?? null,
+                'producer' => $fileItem->own()['producer'] ?? null,
             ];
         }
 
         $this->files = [];
+    }
+
+    /**
+     * Schalter „Eigenes Dokument“ für eine hochgeladene Datei umstellen.
+     */
+    public function toggleOwn(int $id): void
+    {
+        $index = array_search($id, array_column($this->uploadedFiles, 'id'), true);
+        $file = File::find($id);
+        if ($index === false || ! $file) {
+            return;
+        }
+
+        $file->setOwn(! $file->isOwn());
+        $this->uploadedFiles[$index]['own'] = $file->isOwn();
+        $this->uploadedFiles[$index]['own_source'] = 'user';
     }
 
     public function dispatchToModel(): void

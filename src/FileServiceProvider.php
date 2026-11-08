@@ -2,6 +2,7 @@
 
 namespace Nfgarching\Files;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -14,6 +15,7 @@ use Nfgarching\Core\Traits\PublishesPackageMigrations;
 use Nfgarching\Files\Console\ArchiveFiles;
 use Nfgarching\Files\Console\InspectFiles;
 use Nfgarching\Files\Console\MakeTestCertificate;
+use Nfgarching\Files\Console\PruneTrash;
 use Nfgarching\Files\Livewire\Import;
 use Nfgarching\Files\Livewire\Index;
 use Nfgarching\Files\Livewire\Upload;
@@ -38,7 +40,15 @@ class FileServiceProvider extends ServiceProvider
                 ArchiveFiles::class,
                 InspectFiles::class,
                 MakeTestCertificate::class,
+                PruneTrash::class,
             ]);
+        }
+
+        // Papierkorb für ersetzte Originale täglich bereinigen
+        if (config('files.archive.own.schedule_prune', true)) {
+            $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
+                $schedule->command('files:prune-trash')->dailyAt('03:17')->withoutOverlapping();
+            });
         }
 
         // Nur aus dem Package laden, wenn NICHT bereits ins Projekt publiziert.

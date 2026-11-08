@@ -136,6 +136,23 @@ return [
             'with_validation_info' => env('FILES_SIGN_LTV', false),
             'timeout' => 120,
         ],
+
+        /*
+        | Eigene Dokumente: Archivfassung wird Hauptdatei, das Original
+        | wandert in den Papierkorb und wird nach trash_days gelöscht.
+        | replace: never | own (nur „Eigenes Dokument“) | always
+        | Vorbelegung des Schalters: Import-Disks (disks) bzw. Erzeuger-
+        | programm laut PDF-Metadaten (producers, Teilstring, ohne Groß-/
+        | Kleinschreibung). Kommagetrennt in der .env.
+        */
+        'own' => [
+            'replace' => env('FILES_ARCHIVE_REPLACE', 'own'),
+            'require_validation' => env('FILES_ARCHIVE_REPLACE_REQUIRE_VALID', true),
+            'disks' => array_filter(array_map('trim', explode(',', (string) env('FILES_OWN_DISKS', '')))),
+            'producers' => array_filter(array_map('trim', explode(',', (string) env('FILES_OWN_PRODUCERS', '')))),
+            'trash_days' => (int) env('FILES_TRASH_DAYS', 90),
+            'schedule_prune' => env('FILES_TRASH_SCHEDULE', true),
+        ],
     ],
 
     /*

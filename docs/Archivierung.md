@@ -8,6 +8,7 @@ Original (unverändert) → OCR → PDF/A-2b + Optimierung → Validierung → S
 ```
 
 - Das **Original** bleibt bitgenau erhalten; seine SHA-256-Prüfsumme wird gespeichert.
+  Ausnahme: Bei **eigenen Dokumenten** ersetzt die Archivfassung das Original (siehe unten).
 - Die Archivfassung liegt unter `…/archive/JJJJ-MM/archive-<datei>.pdf`
   (`generated_conversions.archive`).
 - Das Ergebnis jedes Schritts steht in `custom_properties.archive`.
@@ -59,6 +60,85 @@ Mögliche Status der Schritte:
 | `signature` | `signed`, `nocert`, `notool`, `error`, `disabled` |
 
 Im Model: `$file->archive()`, `$file->archivePdfPath()`, `$file->isArchiveSigned()`.
+
+## Eigene Dokumente: Archivfassung ersetzt das Original
+
+Bei eigenen Dokumenten (selbst erstellte Schreiben, eigene Scans) hat das
+Original keinen eigenen Beweiswert; die Archivfassung ist die bessere Datei
+(PDF/A, durchsuchbar, meist kleiner, gesiegelt). Ist ein PDF als
+**„Eigenes Dokument“** gekennzeichnet, wird nach erfolgreicher Archivierung
+
+1. die Archivfassung zur Hauptdatei (`file`, `hash`, `size`),
+2. das Original in den Papierkorb verschoben (`…/trash/JJJJ-MM/`),
+3. das Original nach **90 Tagen** (`FILES_TRASH_DAYS`) von `files:prune-trash`
+   endgültig gelöscht.
+
+Ersetzt wird nur, wenn die Archivfassung **validiert** (`compliant`) **und
+gesiegelt** (`signed`) ist. Elektronisch empfangene Dokumente Dritter sollten
+nicht gekennzeichnet werden: Nur das Original zeigt bitgenau, was eingegangen
+ist; außerdem entfernt PDF/A eingebettete Dateien und JavaScript.
+
+### Vorbelegung des Schalters nach Quelle
+
+| Quelle | Vorbelegung |
+|---|---|
+| Von der App erzeugt | ausdrücklich: `File::storeUpload($upload, ['own' => true])` bzw. `File::importFromDisk($disk, $path, ['own' => true])` |
+| Import aus einem Ordner | an, wenn die Disk in `FILES_OWN_DISKS` steht (z. B. der Scan-Eingang) |
+| Upload | an, wenn das Erzeugerprogramm laut PDF-Metadaten einen Eintrag aus `FILES_OWN_PRODUCERS` enthält |
+
+```dotenv
+FILES_OWN_DISKS=scan_inbox
+FILES_OWN_PRODUCERS=LibreOffice,Microsoft® Word
+```
+
+Das erkannte Erzeugerprogramm steht in `custom_properties.own.producer` und wird
+beim Upload als Hinweis am Schalter sowie in der Detailansicht angezeigt – so
+lässt sich ablesen, welche Einträge für `FILES_OWN_PRODUCERS` passen. Metadaten
+sind nur ein Hinweis: Auch fremde Word-PDFs tragen „Microsoft® Word“.
+
+### Schalter
+
+- **Upload:** pro PDF ein Schalter „Eigenes Dokument“.
+- **Import:** ein Schalter für die ausgewählten Dateien.
+- **Detailansicht** (Tab „Home“, Karte „Archiv“): jederzeit umschaltbar.
+
+Wird der Schalter eingeschaltet, nachdem die Archivfassung schon fertig ist,
+wird sofort ersetzt. Wird er ausgeschaltet, solange das Original noch im
+Papierkorb liegt, wird das Original zurückgeholt; die Archivfassung bleibt
+unter `generated_conversions.archive` erhalten. Nach der endgültigen Löschung
+ist kein Zurückholen mehr möglich.
+
+### Papierkorb bereinigen
+
+`files:prune-trash` wird vom Package täglich um 03:17 Uhr eingeplant
+(`FILES_TRASH_SCHEDULE=false` schaltet das ab). Dafür muss der Laravel-
+Scheduler laufen (`php artisan schedule:work` bzw. Cron mit `schedule:run`).
+
+```bash
+sail artisan files:prune-trash --dry-run   # anzeigen, was gelöscht würde
+sail artisan files:prune-trash             # Frist aus FILES_TRASH_DAYS
+```
+
+### Angaben in `custom_properties`
+
+```json
+"own": { "value": true, "source": "producer", "producer": "Writer / LibreOffice 24.2" },
+"archive": {
+  "status": "archived", "replaced": true, "...": "…",
+  "original": {
+    "disk": "data", "path": "/2026/2026-11/123-AbC123.pdf",
+    "trash_path": "/2026/trash/2026-11/123-AbC123.pdf",
+    "sha256": "…", "size": 482113,
+    "trashed_at": "2026-11-08T22:30:00+01:00", "purge_after": "2027-02-06"
+  }
+}
+```
+
+`source`: `user` (Schalter), `app`, `disk`, `producer`, `none`. Nach dem
+Zurückholen steht in `original` `restored_at`, nach dem Löschen `purged_at`.
+
+Im Model: `isOwn()`, `setOwn(bool)`, `isOriginalReplaced()`,
+`hasTrashedOriginal()`, `replaceOriginalWithArchive()`, `restoreOriginal()`.
 
 ## Benötigte Programme
 
@@ -157,6 +237,12 @@ Alle Werte in `config/files.php` unter `archive`:
 | `FILES_SIGN_REASON` | `Archivierung` | Grund in der Signatur |
 | `FILES_SIGN_LOCATION` / `FILES_SIGN_CONTACT` | – | optionale Angaben |
 | `FILES_SIGN_LTV` | `false` | Sperrinformationen einbetten (nur mit öffentlicher PKI) |
+| `FILES_ARCHIVE_REPLACE` | `own` | Original ersetzen: `never`, `own` (nur eigene Dokumente), `always` |
+| `FILES_ARCHIVE_REPLACE_REQUIRE_VALID` | `true` | nur ersetzen, wenn veraPDF `compliant` meldet |
+| `FILES_OWN_DISKS` | – | Import-Disks, deren Dateien als eigene Dokumente vorbelegt werden |
+| `FILES_OWN_PRODUCERS` | – | Erzeugerprogramme (Teilstrings), die als eigene Dokumente vorbelegt werden |
+| `FILES_TRASH_DAYS` | `90` | Aufbewahrung ersetzter Originale im Papierkorb |
+| `FILES_TRASH_SCHEDULE` | `true` | `files:prune-trash` täglich einplanen |
 
 ## Vorhandene PDFs nachträglich archivieren
 

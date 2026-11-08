@@ -9,7 +9,6 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Nfgarching\Files\Enums\FileType;
 use Nfgarching\Files\Events\NewFiles;
 use Nfgarching\Files\Models\File;
 use Nfgarching\Files\Services\DiskService;
@@ -30,6 +29,9 @@ class Import extends Component
     public int $modelId = 0;
 
     public string $subject = '';
+
+    /** Schalter „Eigene Dokumente“, vorbelegt nach files.archive.own.disks */
+    public bool $own = false;
 
     public string $sort = 'lastModified';
 
@@ -66,6 +68,7 @@ class Import extends Component
         // $this->modelId = request()->integer('model_id') ?: null;
         $this->disk = request()->string('disk', config('files.scan_inbox.disk'))->toString();
         $this->path = request()->string('path', config('files.scan_inbox.path'))->toString();
+        $this->own = in_array($this->disk, (array) config('files.archive.own.disks', []), true);
         if (request()->has('model_type')) {
             $this->modelType = request()->string('model_type', '')->toString();
             $this->modelId = request()->integer('model_id') ?: 0;
@@ -188,9 +191,7 @@ class Import extends Component
 
         $fileIds = [];
         foreach ($this->selectedFiles as $sourcePath) {
-            $extension = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
-            $fileType = FileType::fromExtension($extension);
-            $fileItem = File::importFromDisk($this->disk, $sourcePath, ['file_type' => $fileType->value]);
+            $fileItem = File::importFromDisk($this->disk, $sourcePath, ['own' => $this->own]);
             if ($fileItem) {
                 $fileIds[] = $fileItem->id;
             }

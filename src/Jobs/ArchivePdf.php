@@ -59,6 +59,14 @@ class ArchivePdf implements ShouldQueue
             return;
         }
 
+        // Original schon durch die (gesiegelte) Archivfassung ersetzt: nicht
+        // erneut verarbeiten, sonst gingen die Angaben zum Papierkorb verloren
+        if ($file->isOriginalReplaced()) {
+            Log::channel('files')->info('#'.$file->id.' ArchivePdf: Original bereits ersetzt, übersprungen');
+
+            return;
+        }
+
         $this->workdir = sys_get_temp_dir().'/files-archive-'.$file->id.'-'.bin2hex(random_bytes(4));
         Filesystem::ensureDirectoryExists($this->workdir, 0700);
 
@@ -160,6 +168,13 @@ class ArchivePdf implements ShouldQueue
             }
         }
         Log::channel('files')->info('#'.$file->id.' ArchivePdf: archiviert ('.$target.')');
+
+        // Eigenes Dokument: Archivfassung wird Hauptdatei, Original in den Papierkorb.
+        // Frisch laden – der Schalter kann während der Verarbeitung umgestellt worden sein.
+        $file->refresh();
+        if ($file->shouldReplaceOriginal()) {
+            $file->replaceOriginalWithArchive();
+        }
     }
 
     /**

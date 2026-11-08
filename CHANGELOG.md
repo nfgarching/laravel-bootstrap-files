@@ -12,6 +12,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Befehle `files:make-test-certificate` (Test-CA + Siegelzertifikat) und `files:archive` (nachträgliche Archivierung, `--check`).
 - Model: `archive()`, `archivePdfPath()`, `isArchiveSigned()`.
 - PDF-Prüfung im Tab „PDF“ der Detailseite: Eigenschaften (poppler), Signaturen mit Einzelbewertung (pyHanko), PDF/A mit verletzten Regeln (veraPDF), Prüfsummenvergleich; Job `InspectPdf` nach `ArchivePdf`, Knopf „Neu prüfen“, Befehl `files:inspect`, Model `inspection()` (`docs/PDF-Pruefung.md`).
+- „Eigenes Dokument“: geprüfte und gesiegelte Archivfassung ersetzt das Original, Original 90 Tage im Papierkorb (`FILES_TRASH_DAYS`), Wiederherstellen per Schalter; Vorbelegung nach Quelle (App, Import-Disk, Erzeugerprogramm); Schalter in Upload, Import und Detailansicht; Befehl `files:prune-trash` (täglich eingeplant).
 - Erstveröffentlichung als `laravel-bootstrap-files` (übernommen aus dem internen Package `nfgarching/files`).
 
 ### Changed
@@ -22,6 +23,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Fixed
 
+- `importFromDisk()`: nicht vorhandene Spalte `file_type` wird nicht mehr in den Datensatz geschrieben.
 - Temp-Dateien: `tempFileClean()` löscht nur noch die eigenen Dateien statt `/tmp/tmp*` (traf parallel laufende Jobs).
 
 ### Removed

@@ -202,6 +202,8 @@ FileType::options();                   // → ['image' => 'Bild', 'pdf' => 'PDF'
 | `$file->archive()` | Ergebnis der Archivierung (PDF/A, Validierung, Siegel) |
 | `$file->archivePdfPath()` | Pfad der Archivfassung |
 | `$file->isArchiveSigned()` | Archivfassung gesiegelt? |
+| `$file->isOwn()` / `$file->setOwn(bool)` | Schalter „Eigenes Dokument“ (ersetzt bzw. holt Original zurück) |
+| `$file->isOriginalReplaced()` | Archivfassung ist Hauptdatei, Original im Papierkorb |
 
 ---
 
@@ -215,7 +217,11 @@ Das Original bleibt unverändert, bereits signierte PDFs werden nicht angefasst.
 php artisan files:make-test-certificate   # Testzertifikat erzeugen
 php artisan files:archive --check         # Programme und Zertifikat prüfen
 php artisan files:archive --all           # vorhandene PDFs nachträglich archivieren
+php artisan files:prune-trash             # ersetzte Originale nach 90 Tagen löschen
 ```
+
+Bei PDFs mit Schalter **„Eigenes Dokument“** ersetzt die Archivfassung das
+Original; das Original bleibt 90 Tage im Papierkorb.
 
 Details, Installation und Konfiguration: [docs/Archivierung.md](docs/Archivierung.md)
 

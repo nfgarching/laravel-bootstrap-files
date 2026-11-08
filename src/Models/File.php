@@ -16,12 +16,13 @@ use Nfgarching\Core\Traits\Searchable;
 use Nfgarching\Files\Database\Factories\FileFactory;
 use Nfgarching\Files\Enums\FileType;
 use Nfgarching\Files\Jobs\ProcessFile;
+use Nfgarching\Files\Traits\HasArchive;
 
 // use Nfgarching\Core\Traits\Searchable;
 
 class File extends Model
 {
-    use HasFactory, Searchable, Sortable;
+    use HasArchive, HasFactory, Searchable, Sortable;
 
     /**
      * The table associated with the model.
@@ -416,8 +417,16 @@ class File extends Model
         return $file;
     }
 
+    /**
+     * @param  array<string, mixed>  $arr_input  Spaltenwerte; zusätzlich 'own' (bool)
+     *                                           für „Eigenes Dokument“, sonst Vorbelegung
+     *                                           nach Import-Disk bzw. Erzeugerprogramm
+     */
     public static function importFromDisk(string $sourceDisk, string $sourceFile, array $arr_input = []): self
     {
+        $explicitOwn = array_key_exists('own', $arr_input) ? (bool) $arr_input['own'] : null;
+        unset($arr_input['own'], $arr_input['file_type']);
+
         $extension = strtolower(pathinfo($sourceFile, PATHINFO_EXTENSION));
 
         try {
@@ -493,10 +502,36 @@ class File extends Model
 
         Log::channel('files')->info('#'.$file->id.' Inbox Import: '.$file->name);
 
+        $file->markOwnFromDisk($explicitOwn, $sourceDisk);
+
         // ProcessFile::dispatch($file->id);
         ProcessFile::dispatchSync($file->id);
 
         return $file;
+    }
+
+    /**
+     * Vorbelegung „Eigenes Dokument“ für ein PDF, bevor die Verarbeitung startet.
+     */
+    protected function markOwnFromDisk(?bool $explicit, ?string $sourceDisk = null): void
+    {
+        if ($this->type !== FileType::Pdf) {
+            return;
+        }
+
+        $local = tempnam(sys_get_temp_dir(), 'own');
+        try {
+            $stream = Storage::disk($this->disk)->readStream($this->file);
+            if ($stream) {
+                file_put_contents($local, $stream);
+                fclose($stream);
+            }
+            $this->mergeJson('custom_properties', ['own' => static::detectOwn($local, $explicit, $sourceDisk)]);
+        } catch (\Throwable $e) {
+            Log::channel('files')->warning('#'.$this->id.' Eigenes Dokument: Erkennung fehlgeschlagen: '.$e->getMessage());
+        } finally {
+            @unlink($local);
+        }
     }
 
     public static function storeFile($data)
@@ -504,8 +539,16 @@ class File extends Model
         dd($data);
     }
 
-    public static function storeUpload($upload)
+    /**
+     * @param  array<string, mixed>  $options  'own' (bool) setzt „Eigenes Dokument“
+     *                                         ausdrücklich, z. B. für von der App
+     *                                         erzeugte PDFs; sonst Vorbelegung nach
+     *                                         Erzeugerprogramm
+     */
+    public static function storeUpload($upload, array $options = [])
     {
+        $explicitOwn = array_key_exists('own', $options) ? (bool) $options['own'] : null;
+
         // dump($upload, $arr_input);
         if (! $upload->isValid()) {
             dd('Upload Error: '.$upload->getErrorMessage());
@@ -562,6 +605,8 @@ class File extends Model
         ]); // dump($arr);
         // $file->update(array_merge($arr, $arr_input));
         Log::channel('files')->info('#'.$file->id.' '.$file->name.' uploaded successfully');
+
+        $file->markOwnFromDisk($explicitOwn);
 
         ProcessFile::dispatchSync($file->id);
 

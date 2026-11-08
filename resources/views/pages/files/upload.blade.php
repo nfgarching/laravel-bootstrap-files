@@ -37,6 +37,11 @@
 
         @if (count($uploadedFiles) > 0)
             <div class="mb-3">
+                <div class="form-text mb-2">
+                    <i class="bi bi-info-circle"></i>
+                    Bei eigenen Dokumenten ersetzt die geprüfte und gesiegelte PDF/A-Fassung das Original;
+                    das Original bleibt {{ config('files.archive.own.trash_days', 90) }} Tage im Papierkorb.
+                </div>
                 <h6>
                     Hochgeladene Dateien
                     <span class="badge text-bg-primary">{{ count($uploadedFiles) }}</span>
@@ -59,6 +64,20 @@
                                     {{ $file['file_type_label'] }}
                                 </span>
                             </span>
+                            @if ($file['file_type'] === 'pdf')
+                                <div class="form-check form-switch mb-0 text-nowrap"
+                                    title="{{ $file['producer'] ? 'Erstellt mit: '.$file['producer'] : 'Kein Erzeugerprogramm erkannt' }}">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="own-{{ $file['id'] }}" @checked($file['own'])
+                                        wire:click="toggleOwn({{ $file['id'] }})" wire:loading.attr="disabled">
+                                    <label class="form-check-label small" for="own-{{ $file['id'] }}">
+                                        Eigenes Dokument
+                                        @if ($file['own'] && in_array($file['own_source'], ['producer', 'disk'], true))
+                                            <span class="text-muted">(erkannt)</span>
+                                        @endif
+                                    </label>
+                                </div>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

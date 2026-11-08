@@ -112,6 +112,18 @@ class FileController
                 dd('Job completed!');
                 break;
 
+            case 'OWN':
+                // Schalter „Eigenes Dokument“; an = Original durch Archivfassung ersetzen,
+                // aus = Original aus dem Papierkorb zurückholen
+                $file->setOwn($request->boolean('value'));
+                $file->refresh();
+
+                return back()->with('message', match (true) {
+                    $file->isOriginalReplaced() => 'Eigenes Dokument: Archivfassung ist jetzt die Hauptdatei, Original im Papierkorb.',
+                    $file->isOwn() => 'Als eigenes Dokument gekennzeichnet. Das Original wird ersetzt, sobald die Archivfassung geprüft und gesiegelt ist.',
+                    default => 'Kennzeichnung „Eigenes Dokument“ entfernt'.($file->archive()['original']['restored_at'] ?? null ? ', Original wiederhergestellt.' : '.'),
+                });
+
             case 'ProcessFile':
                 dump('Running job Process for File ID: '.$id);
                 ProcessFile::dispatchSync($id);

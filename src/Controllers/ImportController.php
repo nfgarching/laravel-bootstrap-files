@@ -6,7 +6,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
-use Nfgarching\Files\Enums\FileType;
 use Nfgarching\Files\Events\NewFiles;
 use Nfgarching\Files\Models\File;
 use Nfgarching\Files\Services\DiskService;
@@ -60,12 +59,10 @@ class ImportController
 
         $fileIds = [];
         foreach ($request->input('files') as $sourcePath) {
-            $extension = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
-            $fileType = FileType::fromExtension($extension);
             $fileItem = File::importFromDisk(
                 $request->input('disk'),
                 $sourcePath,
-                ['file_type' => $fileType->value]
+                $request->has('own') ? ['own' => $request->boolean('own')] : []
             );
             $fileIds[] = $fileItem->id;
         }

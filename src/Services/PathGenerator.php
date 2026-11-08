@@ -106,4 +106,17 @@ class PathGenerator
                 '/'.date('Y-m', strtotime($fileitem->created_at)).
                ($this->postfix ? '/'.$this->postfix : '');
     }
+
+    /*
+     * Get the trash path for originals replaced by their archive version.
+     */
+    public function getPathForTrash(File $fileitem): string
+    {
+        return ($this->prefix ? '/'.$this->prefix : '').
+                '/'.date('Y', strtotime($fileitem->created_at)).
+               ($this->suffix ? '/'.$this->suffix : '').
+                '/trash'.
+                '/'.date('Y-m', strtotime($fileitem->created_at)).
+               ($this->postfix ? '/'.$this->postfix : '');
+    }
 }

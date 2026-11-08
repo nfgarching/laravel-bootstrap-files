@@ -48,6 +48,51 @@
             <x-nav.tabs :$tabs :$token :$show>
                 <x-nav.item tab="0" :$token :$show>{{-- Home --}}
 
+                    @if ($file->type === \Nfgarching\Files\Enums\FileType::Pdf)
+                        @php
+                            $archive = $file->archive();
+                            $original = $archive['original'] ?? [];
+                        @endphp
+                        <x-card>
+                            <x-slot name="headerLeft">Archiv</x-slot>
+                            <x-slot name="headerRight">
+                                <a class="btn btn-sm {{ $file->isOwn() ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                    href="{{ route('files.action', ['id' => $file->id, 'switchTo' => 'OWN', 'value' => $file->isOwn() ? 0 : 1]) }}"
+                                    title="{{ $file->isOwn() ? 'Kennzeichnung entfernen (Original wird aus dem Papierkorb zurückgeholt)' : 'Als eigenes Dokument kennzeichnen (Archivfassung ersetzt das Original)' }}">
+                                    <i class="bi bi-{{ $file->isOwn() ? 'toggle-on' : 'toggle-off' }}"></i>
+                                    Eigenes Dokument
+                                </a>
+                            </x-slot>
+                            <dl class="row small mb-0">
+                                <dt class="col-sm-4">Archivfassung</dt>
+                                <dd class="col-sm-8">
+                                    {{ $archive['status'] ?? '–' }}
+                                    @if ($archive)
+                                        · PDF/A: {{ $archive['validation']['status'] ?? $archive['pdfa']['status'] ?? '–' }}
+                                        · Siegel: {{ $archive['signature']['status'] ?? '–' }}
+                                    @endif
+                                </dd>
+                                @if ($file->own()['producer'] ?? null)
+                                    <dt class="col-sm-4">Erstellt mit</dt>
+                                    <dd class="col-sm-8">{{ $file->own()['producer'] }}</dd>
+                                @endif
+                                <dt class="col-sm-4">Original</dt>
+                                <dd class="col-sm-8">
+                                    @if ($file->hasTrashedOriginal())
+                                        im Papierkorb bis {{ \Illuminate\Support\Carbon::parse($original['purge_after'])->format('d.m.Y') }}
+                                        <a href="{{ route('download', ['disk' => $original['disk'], 'file' => $original['trash_path']]) }}" target="_blank">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                        </a>
+                                    @elseif (! empty($original['purged_at']))
+                                        endgültig gelöscht am {{ \Illuminate\Support\Carbon::parse($original['purged_at'])->format('d.m.Y') }}
+                                    @else
+                                        Hauptdatei
+                                    @endif
+                                </dd>
+                            </dl>
+                        </x-card>
+                    @endif
+
                     <x-card>
                         <x-slot name="header"></x-slot>
                         <x-desc.list :item="$file->toArray()" />
