@@ -5,6 +5,7 @@ namespace Nfgarching\Files\Traits;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Nfgarching\Files\Enums\FileType;
+use Nfgarching\Files\Jobs\InspectPdf;
 use Nfgarching\Files\Services\Archive\PdfInspector;
 
 /**
@@ -96,10 +97,15 @@ trait HasArchive
             'producer' => $this->own()['producer'] ?? null,
         ]]);
 
-        if ($value && $this->shouldReplaceOriginal()) {
-            $this->replaceOriginalWithArchive();
-        } elseif ($this->hasTrashedOriginal()) {
-            $this->restoreOriginal();
+        $changed = match (true) {
+            $value && $this->shouldReplaceOriginal() => $this->replaceOriginalWithArchive(),
+            ! $value && $this->hasTrashedOriginal() => $this->restoreOriginal(),
+            default => false,
+        };
+
+        // Prüfergebnis (Tab „PDF“) bezieht sich auf die bisherige Hauptdatei
+        if ($changed && config('files.inspect.enabled', true)) {
+            InspectPdf::dispatch($this->id);
         }
     }
 

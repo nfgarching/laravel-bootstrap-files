@@ -49,6 +49,8 @@ beforeEach(function () {
     file_put_contents($this->certificate, 'dummy');
 
     config([
+        // PDF-Prüfung hat eigene Tests (FileInspectionTest)
+        'files.inspect.enabled' => false,
         'files.archive.enabled' => true,
         'files.archive.skip_signed' => true,
         'files.archive.pdfa' => ['enabled' => true, 'binary' => 'ocrmypdf', 'output_type' => 'pdfa-2', 'optimize' => 1],

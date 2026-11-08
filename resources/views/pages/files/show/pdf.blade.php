@@ -65,12 +65,27 @@
     @foreach ($inspection['variants'] ?? [] as $key => $variant)
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between">
-                <strong><i class="bi bi-file-earmark-pdf"></i> {{ $variantLabels[$key] ?? $key }}</strong>
-                <a href="{{ route('download', ['disk' => $variant['disk'], 'file' => $variant['path']]) }}" target="_blank"
-                    class="small text-truncate ms-2" style="max-width: 60%">{{ basename($variant['path']) }}</a>
+                <strong>
+                    <i class="bi bi-file-earmark-pdf"></i> {{ $variantLabels[$key] ?? $key }}
+                    @if (! empty($variant['trashed']))
+                        <span class="badge text-bg-warning ms-1">Papierkorb bis
+                            {{ \Illuminate\Support\Carbon::parse($variant['purge_after'])->format('d.m.Y') }}</span>
+                    @endif
+                </strong>
+                @if (($variant['status'] ?? null) !== 'purged')
+                    <a href="{{ route('download', ['disk' => $variant['disk'], 'file' => $variant['path']]) }}" target="_blank"
+                        class="small text-truncate ms-2" style="max-width: 60%">{{ basename($variant['path']) }}</a>
+                @endif
             </div>
 
-            @if (($variant['status'] ?? null) === 'missing')
+            @if (($variant['status'] ?? null) === 'purged')
+                <div class="card-body">
+                    <div class="alert alert-secondary mb-0">
+                        Eigenes Dokument: Das Original wurde durch die Archivfassung ersetzt und nach Ablauf der
+                        Frist endgültig gelöscht{{ ! empty($variant['purged_at']) ? ' ('.\Illuminate\Support\Carbon::parse($variant['purged_at'])->format('d.m.Y').')' : '' }}.
+                    </div>
+                </div>
+            @elseif (($variant['status'] ?? null) === 'missing')
                 <div class="card-body">
                     <div class="alert alert-danger mb-0">Datei nicht gefunden: {{ $variant['path'] }}</div>
                 </div>

@@ -38,9 +38,27 @@ class PdfInspection
 
         try {
             $archive = $file->archive() ?? [];
-            $variants = ['original' => $this->variant(
-                $file->disk, $file->file, $workdir.'/original.pdf', $archive['source_sha256'] ?? null,
-            )];
+            $original = $archive['original'] ?? [];
+
+            if ($file->isOriginalReplaced()) {
+                // Eigenes Dokument: Hauptdatei ist die Archivfassung, das Original
+                // liegt im Papierkorb oder ist nach Fristablauf gelöscht
+                $variants = ['original' => $file->hasTrashedOriginal()
+                    ? $this->variant(
+                        $original['disk'] ?? $file->disk, $original['trash_path'], $workdir.'/original.pdf',
+                        $original['sha256'] ?? $archive['source_sha256'] ?? null,
+                    ) + ['trashed' => true, 'purge_after' => $original['purge_after'] ?? null]
+                    : [
+                        'disk' => $original['disk'] ?? $file->disk,
+                        'path' => $original['path'] ?? '',
+                        'status' => 'purged',
+                        'purged_at' => $original['purged_at'] ?? null,
+                    ]];
+            } else {
+                $variants = ['original' => $this->variant(
+                    $file->disk, $file->file, $workdir.'/original.pdf', $archive['source_sha256'] ?? null,
+                )];
+            }
 
             if ($path = $file->archivePdfPath()) {
                 $variants['archive'] = $this->variant(

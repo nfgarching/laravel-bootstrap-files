@@ -114,3 +114,11 @@ und die Vertrauensanker.
 | `Services\Inspection\SignatureVerdict` | Ampeln je Signatur |
 | `Services\Archive\PdfaValidator` | veraPDF, liefert jetzt auch `rules` (Klausel, Beschreibung, Meldung; max. 50) |
 | `resources/views/pages/files/show/pdf.blade.php` | Tab „PDF“ |
+
+## Eigene Dokumente
+
+Ist das Original durch die Archivfassung ersetzt (siehe
+[Archivierung.md](Archivierung.md#eigene-dokumente-archivfassung-ersetzt-das-original)),
+prüft der Tab „PDF“ als „Original“ die Datei im Papierkorb (mit Hinweis auf das
+Löschdatum) bzw. zeigt nach Fristablauf, dass das Original gelöscht ist. Nach
+dem Umschalten des Schalters „Eigenes Dokument“ wird automatisch neu geprüft.
