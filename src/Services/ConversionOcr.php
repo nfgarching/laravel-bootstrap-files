@@ -79,7 +79,12 @@ class ConversionOcr implements ShouldQueue
             return;
         }
 
-        $command = "ocrmypdf -l deu '{$source}' '{$pdfFile}' --image-dpi 300 --skip-text --sidecar {$txtFile} 2>&1";
+        // Ausgabe direkt als PDF/A (Typ und Optimierung aus files.archive.pdfa),
+        // damit ArchivePdf keine zweite Ghostscript-Umwandlung braucht.
+        $outputType = escapeshellarg((string) config('files.archive.pdfa.output_type', 'pdfa-2'));
+        $optimize = (int) config('files.archive.pdfa.optimize', 1);
+
+        $command = "ocrmypdf -l deu '{$source}' '{$pdfFile}' --image-dpi 300 --skip-text --output-type {$outputType} --optimize {$optimize} --sidecar {$txtFile} 2>&1";
 
         try {
             // dump('Running command: '.$command);

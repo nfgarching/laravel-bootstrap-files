@@ -11,6 +11,8 @@ use Nfgarching\Core\Modals\ModalRegistry;
 use Nfgarching\Core\Navigation\NavbarNavigation;
 use Nfgarching\Core\Navigation\SidebarNavigation;
 use Nfgarching\Core\Traits\PublishesPackageMigrations;
+use Nfgarching\Files\Console\ArchiveFiles;
+use Nfgarching\Files\Console\MakeTestCertificate;
 use Nfgarching\Files\Livewire\Import;
 use Nfgarching\Files\Livewire\Index;
 use Nfgarching\Files\Livewire\Upload;
@@ -29,6 +31,13 @@ class FileServiceProvider extends ServiceProvider
         $this->bootListeners();
         $this->bootLivewire();
         $this->bootChatbotIntegration();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                ArchiveFiles::class,
+                MakeTestCertificate::class,
+            ]);
+        }
 
         // Nur aus dem Package laden, wenn NICHT bereits ins Projekt publiziert.
         // Anonyme Migrationsklassen haben keinen Klassennamen, daher wird per

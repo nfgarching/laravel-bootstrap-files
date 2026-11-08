@@ -199,11 +199,32 @@ FileType::options();                   // → ['image' => 'Bild', 'pdf' => 'PDF'
 | `$file->getPathToFile()` | Vollständiger Pfad zur Datei |
 | `File::storeUpload($upload)` | Upload-Objekt speichern und verarbeiten |
 | `File::importFromDisk($disk, $file)` | Bestehende Datei von Disk importieren |
+| `$file->archive()` | Ergebnis der Archivierung (PDF/A, Validierung, Siegel) |
+| `$file->archivePdfPath()` | Pfad der Archivfassung |
+| `$file->isArchiveSigned()` | Archivfassung gesiegelt? |
+
+---
+
+## Archivierung: PDF/A, Siegel und Zeitstempel
+
+Jedes PDF erhält nach der OCR eine Archivfassung: PDF/A-2b (ocrmypdf),
+validiert (veraPDF), mit PAdES-Siegel und RFC-3161-Zeitstempel (pyHanko).
+Das Original bleibt unverändert, bereits signierte PDFs werden nicht angefasst.
+
+```bash
+php artisan files:make-test-certificate   # Testzertifikat erzeugen
+php artisan files:archive --check         # Programme und Zertifikat prüfen
+php artisan files:archive --all           # vorhandene PDFs nachträglich archivieren
+```
+
+Details, Installation und Konfiguration: [docs/Archivierung.md](docs/Archivierung.md)
 
 ---
 
 ## Abhängigkeiten
 
+- `nfgarching/core` — Navigation, Modals, Traits
 - `kyslik/column-sortable` — Sortierbare Tabellenspalten (`->sortable()`)
+- Systemprogramme für OCR und Archivierung: `ocrmypdf`, `pyhanko`, `verapdf` (optional, siehe docs)
 - Bootstrap 5 — Modals, Dropdowns, Tooltips (JS muss initialisiert sein)
 - Bootstrap Icons (`bi bi-*`)

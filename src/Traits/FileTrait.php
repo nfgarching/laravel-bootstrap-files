@@ -76,16 +76,31 @@ trait FileTrait
         return $this;
     }
 
+    /** @var list<string> */
+    private array $tempFiles = [];
+
     private function tempFile()
     {
-        // dd('STOP tempFile');
-        return tempnam(sys_get_temp_dir(), 'tmp');
+        $file = tempnam(sys_get_temp_dir(), 'tmp');
+        if ($file !== false) {
+            $this->tempFiles[] = $file;
+        }
+
+        return $file;
     }
 
+    /**
+     * Löscht nur die von diesem Job angelegten Temp-Dateien. Früher wurde
+     * /tmp/tmp* gelöscht – das traf auch Dateien parallel laufender Jobs.
+     */
     private function tempFileClean()
     {
-        // dd('STOP tempFileClean');
-        exec('rm /tmp/tmp*');
+        foreach ($this->tempFiles as $file) {
+            if (is_file($file)) {
+                @unlink($file);
+            }
+        }
+        $this->tempFiles = [];
 
         return true;
     }

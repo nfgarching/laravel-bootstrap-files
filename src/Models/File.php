@@ -119,6 +119,10 @@ class File extends Model
                 $path = (new $pathclass)->getPathForOcr($this);
                 break;
 
+            case 'archive':
+                $path = (new $pathclass)->getPathForArchive($this);
+                break;
+
             case 'responsive_images':
                 $path = (new $pathclass)->getPathForResponsiveImages($this);
                 break;
@@ -194,6 +198,31 @@ class File extends Model
     public function ocrFailed(): bool
     {
         return in_array($this->ocr()['type'] ?? null, ['noocr', 'errocr'], true);
+    }
+
+    /**
+     * Archivierungsergebnis (custom_properties.archive):
+     * status (archived|skipped|error), path, sha256, source_sha256,
+     * pdfa, validation, signature (je mit status), at.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function archive(): ?array
+    {
+        return $this->custom_properties['archive'] ?? null;
+    }
+
+    /**
+     * Pfad der Archivfassung (PDF/A, gesiegelt) in generated_conversions.archive.
+     */
+    public function archivePdfPath(): ?string
+    {
+        return $this->generated_conversions['archive'] ?? null;
+    }
+
+    public function isArchiveSigned(): bool
+    {
+        return ($this->archive()['signature']['status'] ?? null) === 'signed';
     }
 
     /**

@@ -8,12 +8,20 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- Archivierung aller PDFs: PDF/A-2b + Optimierung, Validierung mit veraPDF, PAdES-Siegel mit RFC-3161-Zeitstempel (pyHanko); Job `ArchivePdf` nach OCR, bereits signierte PDFs bleiben unverändert (`docs/Archivierung.md`).
+- Befehle `files:make-test-certificate` (Test-CA + Siegelzertifikat) und `files:archive` (nachträgliche Archivierung, `--check`).
+- Model: `archive()`, `archivePdfPath()`, `isArchiveSigned()`.
 - Erstveröffentlichung als `laravel-bootstrap-files` (übernommen aus dem internen Package `nfgarching/files`).
 
 ### Changed
 
+- OCR erzeugt ausdrücklich PDF/A (`FILES_PDFA_OUTPUT_TYPE`) mit Optimierung (`FILES_PDFA_OPTIMIZE`).
 - Abhängigkeit `nfgarching/core` in `require` eingetragen, PHP-Mindestversion an Core angeglichen (^8.4); Chatbot nur noch als `suggest`.
 - S3-Endpoints der Zusatz-Disks über `S3_ENDPOINT` / `S3_BACKUP_ENDPOINT` konfigurierbar.
+
+### Fixed
+
+- Temp-Dateien: `tempFileClean()` löscht nur noch die eigenen Dateien statt `/tmp/tmp*` (traf parallel laufende Jobs).
 
 ### Removed
 

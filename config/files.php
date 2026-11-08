@@ -88,6 +88,58 @@ return [
         'path' => env('SCAN_INBOX_PATH', '/'),
     ],
     
+    /*
+    |--------------------------------------------------------------------------
+    | Archivierung (PDF/A + Siegel + Zeitstempel)
+    |--------------------------------------------------------------------------
+    | Jedes hochgeladene PDF erhält nach OCR eine Archivfassung:
+    | PDF/A + Optimierung (ocrmypdf) → Validierung (veraPDF) →
+    | PAdES-Siegel mit Zeitstempel (pyHanko). Das Original bleibt unverändert.
+    | Bereits signierte PDFs werden nicht verändert (skip_signed).
+    | Installation der Tools: docs/Archivierung.md
+    |--------------------------------------------------------------------------
+    */
+
+    'archive' => [
+        'enabled' => env('FILES_ARCHIVE_ENABLED', true),
+        'queue' => env('FILES_ARCHIVE_QUEUE'),
+        'skip_signed' => true,
+
+        'pdfa' => [
+            'enabled' => env('FILES_PDFA_ENABLED', true),
+            'binary' => env('FILES_OCRMYPDF_BINARY', 'ocrmypdf'),
+            'output_type' => env('FILES_PDFA_OUTPUT_TYPE', 'pdfa-2'), // pdfa-1 | pdfa-2 | pdfa-3
+            'optimize' => (int) env('FILES_PDFA_OPTIMIZE', 1),        // 0–3; 2/3 benötigen jbig2 + pngquant
+            'language' => env('FILES_PDFA_LANGUAGE', 'deu'),
+            'timeout' => 600,
+        ],
+
+        'validate' => [
+            'enabled' => env('FILES_PDFA_VALIDATE', true),
+            'binary' => env('FILES_VERAPDF_BINARY', 'verapdf'),
+            'flavour' => env('FILES_PDFA_FLAVOUR', '2b'),             // passend zu output_type
+            'timeout' => 300,
+        ],
+
+        'sign' => [
+            'enabled' => env('FILES_SIGN_ENABLED', true),
+            'binary' => env('FILES_PYHANKO_BINARY', 'pyhanko'),
+            // PKCS#12-Datei; relative Pfade gelten ab storage/
+            'certificate' => env('FILES_SIGN_CERT'),
+            'password' => env('FILES_SIGN_PASSWORD'),
+            // RFC-3161-Zeitstempeldienst, leer = ohne Zeitstempel
+            'tsa_url' => env('FILES_TSA_URL'),
+            'field_name' => env('FILES_SIGN_FIELD', 'Archivsiegel'),
+            'reason' => env('FILES_SIGN_REASON', 'Archivierung'),
+            'location' => env('FILES_SIGN_LOCATION'),
+            'contact' => env('FILES_SIGN_CONTACT'),
+            'pades' => true,
+            // Sperrinformationen (OCSP/CRL) einbetten – nur mit öffentlicher PKI sinnvoll
+            'with_validation_info' => env('FILES_SIGN_LTV', false),
+            'timeout' => 120,
+        ],
+    ],
+
     'X_status' => [
         'active' => [
             'txt' => 'Aktiv',

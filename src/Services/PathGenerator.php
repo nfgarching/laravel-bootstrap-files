@@ -93,4 +93,17 @@ class PathGenerator
         //        ($this->postfix ? $this->postfix.'/' : '').
         //         $fileitem->id.'';
     }
+
+    /*
+     * Get the path for the archive version (PDF/A, sealed) of the given file.
+     */
+    public function getPathForArchive(File $fileitem): string
+    {
+        return ($this->prefix ? '/'.$this->prefix : '').
+                '/'.date('Y', strtotime($fileitem->created_at)).
+               ($this->suffix ? '/'.$this->suffix : '').
+                '/archive'.
+                '/'.date('Y-m', strtotime($fileitem->created_at)).
+               ($this->postfix ? '/'.$this->postfix : '');
+    }
 }
