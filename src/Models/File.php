@@ -226,6 +226,18 @@ class File extends Model
     }
 
     /**
+     * Ergebnis der PDF-Prüfung (custom_properties.inspection): at, trust,
+     * variants.original / variants.archive mit properties, signatures,
+     * pdfa und integrity. Siehe Services\Inspection\PdfInspection.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function inspection(): ?array
+    {
+        return $this->custom_properties['inspection'] ?? null;
+    }
+
+    /**
      * Pfad des durchsuchbaren OCR-PDFs (generated_conversions.ocr).
      */
     public function ocrPdfPath(): ?string

@@ -60,6 +60,7 @@ class ProcessFile implements ShouldQueue
         $ocr_conv_service = config('files.ocr_conversion_service');
 
         $archive = config('files.archive.enabled', true);
+        $inspect = config('files.inspect.enabled', true);
 
         if (config('files.file_processing_queue') == 'sync') {
             $pdf_conv_service::dispatchSync($this->file->id);
@@ -67,12 +68,16 @@ class ProcessFile implements ShouldQueue
             if ($archive) {
                 ArchivePdf::dispatchSync($this->file->id);
             }
+            if ($inspect) {
+                InspectPdf::dispatchSync($this->file->id);
+            }
         } else {
             $pdf_conv_service::dispatch($this->file->id);
             // Archivierung erst nach OCR: sie baut auf dem durchsuchbaren PDF auf
             Bus::chain(array_filter([
                 new $ocr_conv_service($this->file->id),
                 $archive ? new ArchivePdf($this->file->id) : null,
+                $inspect ? new InspectPdf($this->file->id) : null,
             ]))->dispatch();
         }
 

@@ -168,6 +168,8 @@ sail artisan files:archive --all --force  # alle erneut
 
 ## Signatur prüfen
 
+Im Tab „PDF“ der Datei-Detailseite – siehe [PDF-Pruefung.md](PDF-Pruefung.md). Auf der Kommandozeile:
+
 ```bash
 pyhanko sign validate --pretty-print --trust storage/app/private/files-signing/test-ca.crt --trust-replace archive.pdf
 ```

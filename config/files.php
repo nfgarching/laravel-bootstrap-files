@@ -3,7 +3,6 @@
 use Nfgarching\Files\Services\ConversionImg;
 use Nfgarching\Files\Services\ConversionOcr;
 use Nfgarching\Files\Services\ConversionPdf;
-
 use Nfgarching\Files\Services\PathGenerator;
 
 // use Illuminate\Support\Facades\DB;
@@ -34,7 +33,6 @@ return [
 
     'default_model_type' => env('FILE_DEFAULT_MODEL_TYPE', 'App\Models\User'),
 
-
     /*
     |--------------------------------------------------------------------------
     | File Directory Prefix, Suffix and Postfix
@@ -53,11 +51,11 @@ return [
     | noprocess: disables file processing (for testing or if you want to handle it manually)
     | sync: processes files immediately in the same request (not recommended for large files or production)
     |--------------------------------------------------------------------------
-    */ 
+    */
 
     'file_processing_queue' => env('FILE_PROCESSING_QUEUE', 'default'),
 
-    ## Wird nicht genutzt
+    // # Wird nicht genutzt
     'file_processing_conversion_queue' => env('FILE_PROCESSING_CONVERSION_QUEUE', config('files.file_processing_queue')),
     'file_processing_ocr_queue' => env('FILE_PROCESSING_OCR_QUEUE', config('files.file_processing_queue')),
 
@@ -87,7 +85,7 @@ return [
         'disk' => env('SCAN_INBOX_DISK', 'public'),
         'path' => env('SCAN_INBOX_PATH', '/'),
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     | Archivierung (PDF/A + Siegel + Zeitstempel)
@@ -138,6 +136,28 @@ return [
             'with_validation_info' => env('FILES_SIGN_LTV', false),
             'timeout' => 120,
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | PDF-Prüfung (Eigenschaften, Signaturen, PDF/A, Prüfsummen)
+    |--------------------------------------------------------------------------
+    | Ergebnis in custom_properties.inspection, Anzeige im Tab „PDF“ der
+    | Datei. Siehe docs/PDF-Pruefung.md.
+    |--------------------------------------------------------------------------
+    */
+
+    'inspect' => [
+        // nach der Archivierung automatisch prüfen
+        'enabled' => env('FILES_INSPECT_ENABLED', true),
+        // Python mit pyHanko; leer = Interpreter des pyhanko-Kommandos
+        'python' => env('FILES_INSPECT_PYTHON'),
+        // Vertrauensanker (PEM/DER), kommagetrennt, relativ zu storage/
+        'trust' => env('FILES_INSPECT_TRUST', 'app/private/files-signing/test-ca.crt'),
+        // Sperrinformationen (OCSP/CRL) aus dem Netz laden
+        'fetch' => env('FILES_INSPECT_FETCH', true),
+        'text_pages' => 3,
+        'timeout' => 120,
     ],
 
     'X_status' => [

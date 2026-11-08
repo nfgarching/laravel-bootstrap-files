@@ -162,8 +162,8 @@
         <div class="col-xl-6">
 
             @php
-                $show = 2;
-                $tabs = ['INFO', 'Props', 'SHOW', 'Test'];
+                $show = $request->query('tab') === 'pdf' ? 3 : 2;
+                $tabs = ['INFO', 'Props', 'SHOW', 'PDF', 'Test'];
                 $token = rand();
             @endphp
             <x-nav.tabs :$tabs :$token :$show>
@@ -284,7 +284,17 @@
                     @endif
 
                 </x-nav.item>
-                <x-nav.item tab="3" :$token :$show>{{-- Test --}}
+                <x-nav.item tab="3" :$token :$show>{{-- PDF --}}
+
+                    @if ($file->type->value === 'pdf')
+                        @include('files::show.pdf')
+                    @else
+                        <br>
+                        --- Kein PDF ---
+                    @endif
+
+                </x-nav.item>
+                <x-nav.item tab="4" :$token :$show>{{-- Test --}}
 
                     Test
 

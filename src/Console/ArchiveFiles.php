@@ -8,6 +8,7 @@ use Nfgarching\Files\Enums\FileType;
 use Nfgarching\Files\Jobs\ArchivePdf;
 use Nfgarching\Files\Models\File;
 use Nfgarching\Files\Services\Archive\PdfSigner;
+use Nfgarching\Files\Services\Inspection\SignatureInspector;
 
 /**
  * Archiviert vorhandene PDFs nachträglich (PDF/A + Siegel + Zeitstempel)
@@ -73,6 +74,19 @@ class ArchiveFiles extends Command
             $version = trim(strtok($result->output().$result->errorOutput(), "\n") ?: '');
             $rows[] = [$label, $result->successful() ? 'ok' : 'FEHLT', $result->successful() ? $version : ''];
         }
+
+        // PDF-Prüfung (Tab „PDF“, files:inspect)
+        $python = app(SignatureInspector::class)->python();
+        foreach ([
+            'poppler (Prüfung)' => ['pdfinfo', '-v'],
+            'pyHanko-Bibliothek (Prüfung)' => [$python, '-c', 'import pyhanko, sys; print(sys.executable)'],
+        ] as $label => $command) {
+            $result = Process::timeout(60)->run($command);
+            $version = trim(strtok($result->output().$result->errorOutput(), "\n") ?: '');
+            $rows[] = [$label, $result->successful() ? 'ok' : 'FEHLT', $result->successful() ? $version : implode(' ', $command)];
+        }
+        $trust = SignatureInspector::trustCertificates();
+        $rows[] = ['Vertrauensanker', $trust ? 'ok' : 'aus', $trust ? implode(', ', array_map('basename', $trust)) : 'FILES_INSPECT_TRUST leer oder nicht lesbar'];
 
         $cert = PdfSigner::certificatePath();
         $rows[] = ['Zertifikat', $cert && is_readable($cert) ? 'ok' : 'FEHLT', $cert ?? 'FILES_SIGN_CERT nicht gesetzt'];

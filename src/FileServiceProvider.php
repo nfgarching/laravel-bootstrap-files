@@ -12,6 +12,7 @@ use Nfgarching\Core\Navigation\NavbarNavigation;
 use Nfgarching\Core\Navigation\SidebarNavigation;
 use Nfgarching\Core\Traits\PublishesPackageMigrations;
 use Nfgarching\Files\Console\ArchiveFiles;
+use Nfgarching\Files\Console\InspectFiles;
 use Nfgarching\Files\Console\MakeTestCertificate;
 use Nfgarching\Files\Livewire\Import;
 use Nfgarching\Files\Livewire\Index;
@@ -35,6 +36,7 @@ class FileServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 ArchiveFiles::class,
+                InspectFiles::class,
                 MakeTestCertificate::class,
             ]);
         }

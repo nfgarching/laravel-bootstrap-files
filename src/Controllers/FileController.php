@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Nfgarching\Files\Enums\FileType;
 use Nfgarching\Files\Events\NewFiles;
+use Nfgarching\Files\Jobs\InspectPdf;
 use Nfgarching\Files\Jobs\ProcessFile;
 use Nfgarching\Files\Models\File;
 use Nfgarching\Files\Requests\ActionFileRequest;
@@ -317,6 +318,25 @@ class FileController
     // {
     //     //
     // }
+
+    /**
+     * Prüft das PDF sofort neu (Eigenschaften, Signaturen, PDF/A, Prüfsummen).
+     * Dauert einige Sekunden: veraPDF startet eine JVM, pyHanko fragt ggf.
+     * OCSP/CRL ab.
+     */
+    public function inspect(File $file, Request $request): RedirectResponse
+    {
+        // Listenfilter der Detailseite (Blättern) mitnehmen, Tab „PDF“ öffnen
+        $back = redirect()->route('files.show', ['file' => $file, ...$request->except('_token'), 'tab' => 'pdf']);
+
+        if ($file->type !== FileType::Pdf) {
+            return $back->with('message', 'Nur PDFs können geprüft werden');
+        }
+
+        InspectPdf::dispatchSync($file->id);
+
+        return $back->with('message', 'PDF „'.Str::limit($file->name, 60).'“ geprüft');
+    }
 
     /**
      * Löscht den Datei-Datensatz samt abgeleiteter Props (OCR usw.). Die Datei

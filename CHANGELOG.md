@@ -11,6 +11,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Archivierung aller PDFs: PDF/A-2b + Optimierung, Validierung mit veraPDF, PAdES-Siegel mit RFC-3161-Zeitstempel (pyHanko); Job `ArchivePdf` nach OCR, bereits signierte PDFs bleiben unverändert (`docs/Archivierung.md`).
 - Befehle `files:make-test-certificate` (Test-CA + Siegelzertifikat) und `files:archive` (nachträgliche Archivierung, `--check`).
 - Model: `archive()`, `archivePdfPath()`, `isArchiveSigned()`.
+- PDF-Prüfung im Tab „PDF“ der Detailseite: Eigenschaften (poppler), Signaturen mit Einzelbewertung (pyHanko), PDF/A mit verletzten Regeln (veraPDF), Prüfsummenvergleich; Job `InspectPdf` nach `ArchivePdf`, Knopf „Neu prüfen“, Befehl `files:inspect`, Model `inspection()` (`docs/PDF-Pruefung.md`).
 - Erstveröffentlichung als `laravel-bootstrap-files` (übernommen aus dem internen Package `nfgarching/files`).
 
 ### Changed

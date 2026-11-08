@@ -11,6 +11,10 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/files/{id}/action', [FileController::class, 'action'])
         ->name('files.action');
 
+    // PDF-Prüfung (Eigenschaften, Signaturen, PDF/A) neu ausführen
+    Route::post('/files/{file}/inspect', [FileController::class, 'inspect'])
+        ->name('files.inspect');
+
     // Sammelaktion aus der Datei-Liste (markierte Zeilen)
     Route::post('/files/action', [FileController::class, 'bulkAction'])
         ->name('files.bulk-action');
@@ -38,7 +42,6 @@ Route::middleware(['web', 'auth'])->group(function () {
 
     // Route::get('/file-import', [ImportController::class, 'index'])->name('file-import.index');
     // Route::post('/file-import', [ImportController::class, 'store'])->name('file-import.store');
-
 
 });
 
