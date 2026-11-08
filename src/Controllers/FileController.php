@@ -269,58 +269,6 @@ class FileController
             'request' => $request,
             'startTime' => microtime(true),
         ]);
-
-        dd($file, $request);
-
-        $fileitem = File::find($id);
-        // dd($id);
-        // dd($file->toArray());
-
-        $pathclass = config('path.path_generator');
-        $path2file = (new $pathclass)->getPath($fileitem).$fileitem->file;
-
-        // dump('EDIT');
-        // dump(Storage::disk('local')->exists('dvfdklvmsdm'));
-        // dd($file);
-
-        // dump(Storage::disk('local')->path($file->path . $file->file));
-        // dump(Storage::disk('local')->size($file->path . $file->file));
-        // dump(Storage::disk('local')->lastModified($file->path . $file->file));
-        // dump(Storage::disk('local')->mimeType($file->path . $file->file));
-        // // dump(Storage::hash($file->path . $file->file));
-        // dump(hash_file('md5', Storage::disk('local')->path($file->path . $file->file)));
-        // dd($file->toArray());
-
-        // <embed src="{{ route('show-pdf') }}" type="text/pdf" >
-        // dump($file->all());
-        // $path = Storage::disk($file->disk)->path($file->file);
-        // $mime = Storage::disk($file->disk)->mimeType($file->file);
-        // $name = basename($fileitem->file);
-        // $size = Storage::disk($file->disk)->size($file->file);
-
-        // dd($path, $mime, $name, $size);
-
-        if (config("filesystems.disks.$fileitem->disk.driver") == 'local') {
-            $headers = [
-                'Content-Type' => $fileitem->mime,
-                // 'Content-Length' => $file->size,
-                // 'Content-Disposition' => 'attachment; filename="' . $name . '"',
-                'Content-Disposition' => 'inline; filename="'.$fileitem->name.'"',
-            ];
-
-            return response()->file(Storage::disk($fileitem->disk)->path($fileitem->getPathToFile()), $headers);
-        } else {
-            $headers = [
-                'Content-Type' => $fileitem->mime,
-                // 'Content-Length' => $file->size,
-                // 'Content-Disposition' => 'attachment; filename="' . $name . '"',
-                'Content-Disposition' => 'inline; filename="'.$fileitem->name.'"',
-                // 'Content-Disposition' => 'inline',
-            ];
-
-            // return Storage::disk($file->disk)->download($file->file, $name, $headers);
-            return response()->download(Storage::disk($fileitem->disk)->path($fileitem->getPathToFile()), $fileitem->name, $headers);
-        }
     }
 
     /**
