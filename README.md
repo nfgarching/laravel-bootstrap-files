@@ -37,7 +37,7 @@ Composer legt einen Symlink unter `vendor/nfgarching/files` an; der
 ```bash
 mkdir -p packages/nfgarching
 cd packages/nfgarching
-git clone git@github.com:nfgarching/files.git
+git clone git@github.com:nfgarching/laravel-bootstrap-files.git files
 ```
 
 `composer.json` (Autoload-Eintrag):
