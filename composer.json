@@ -1,0 +1,56 @@
+{
+    "name": "nfgarching/files",
+    "description": "Dateiverwaltung (Disks, Upload, Import) für die Aktenverwaltung.",
+    "keywords": [
+        "laravel",
+        "disks",
+        "files",
+        "upload"
+    ],
+    "homepage": "https://github.com/nfgarching",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Norbert Fröhler",
+            "email": "norbert.froehler@gmail.com",
+            "role": "Owner"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/support": "^13.0",
+        "kyslik/column-sortable": "^8.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
+        "league/flysystem-ftp": "^3.0",
+        "league/flysystem-sftp-v3": "^3.0",
+        "livewire/livewire": "^4.0",
+        "spatie/image": "^3.9",
+        "spatie/pdf-to-image": "^3.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0",
+        "orchestra/testbench": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nfgarching\\Files\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nfgarching\\Files\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Nfgarching\\Files\\FileServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
