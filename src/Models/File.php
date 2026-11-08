@@ -487,10 +487,17 @@ class File extends Model
         $localPath = Storage::disk($save_disk)->path($destFile);
         // $hash = is_file($localPath) ? md5_file($localPath) : md5($destFile.$size);
 
+        // Prüfsumme der kopierten Datei auf der Ziel-Disk (früher fälschlich auf der Quell-Disk gesucht)
+        $hash = md5($destFile);
         try {
-            $hash = md5_file(Storage::disk($sourceDisk)->path($destFile));
+            $stream = Storage::disk($save_disk)->readStream($destFile);
+            if ($stream) {
+                $context = hash_init('md5');
+                hash_update_stream($context, $stream);
+                fclose($stream);
+                $hash = hash_final($context);
+            }
         } catch (\Throwable) {
-            $hash = md5($destFile);
         }
 
         $file->update(array_merge([
