@@ -12,7 +12,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Changed
 
-- Abhängigkeit `nfgarching/core` in `require` eingetragen, PHP-Mindestversion an Core angeglichen (^8.4); Chatbot nur noch als `suggest`.
+- Abhängigkeit `nfgarching/core` (^0.1) in `require` eingetragen, PHP-Mindestversion an Core angeglichen (^8.4); Chatbot nur noch als `suggest`.
 - S3-Endpoints der Zusatz-Disks über `S3_ENDPOINT` / `S3_BACKUP_ENDPOINT` konfigurierbar.
 
 ### Removed
