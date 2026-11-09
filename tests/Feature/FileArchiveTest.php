@@ -80,6 +80,7 @@ function archiveTestPdf(string $content): File
 test('ein PDF wird nach PDF/A gewandelt, validiert, gesiegelt und archiviert', function () {
     fakeArchiveTools();
     $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
+    $file->setOriginalDocument(true);
 
     ArchivePdf::dispatchSync($file->id);
 
@@ -96,7 +97,7 @@ test('ein PDF wird nach PDF/A gewandelt, validiert, gesiegelt und archiviert', f
         ->and($file->isArchiveSigned())->toBeTrue();
 
     Storage::disk('local')->assertExists($archive['path']);
-    // Original bleibt bitgenau erhalten
+    // Original Dokument: Original bleibt bitgenau erhalten
     expect(Storage::disk('local')->get($file->file))->toBe(ARCHIVE_PLAIN_PDF);
 });
 
@@ -166,17 +167,17 @@ test('ohne Zertifikat wird PDF/A archiviert, aber nicht gesiegelt', function () 
 });
 
 /*
- * Eigene Dokumente: Archivfassung ersetzt das Original, Papierkorb 90 Tage
+ * Standard: Archivfassung ersetzt das Original, Papierkorb 90 Tage –
+ * außer bei „Original Dokument“
  */
 
-const ARCHIVE_OWN_PDF = "%PDF-1.7\n1 0 obj << /Producer (LibreOffice 24.2) /Creator (Writer) >> endobj\n%%EOF\n";
+const ARCHIVE_PRODUCER_PDF = "%PDF-1.7\n1 0 obj << /Producer (LibreOffice 24.2) /Creator (Writer) >> endobj\n%%EOF\n";
 
-test('ein eigenes Dokument wird nach der Archivierung durch die Archivfassung ersetzt', function () {
+test('standardmäßig wird das Original nach der Archivierung durch die Archivfassung ersetzt', function () {
     fakeArchiveTools();
-    config(['files.archive.own.replace' => 'own', 'files.archive.own.trash_days' => 90]);
+    config(['files.archive.original.replace' => 'archive', 'files.archive.original.trash_days' => 90]);
     $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
     $originalPath = $file->file;
-    $file->setOwn(true);
 
     ArchivePdf::dispatchSync($file->id);
 
@@ -194,10 +195,11 @@ test('ein eigenes Dokument wird nach der Archivierung durch die Archivfassung er
     expect(Storage::disk('local')->get($original['trash_path']))->toBe(ARCHIVE_PLAIN_PDF);
 });
 
-test('ohne Kennzeichnung bleibt das Original die Hauptdatei', function () {
+test('ein Original Dokument bleibt die Hauptdatei', function () {
     fakeArchiveTools();
     $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
     $originalPath = $file->file;
+    $file->setOriginalDocument(true);
 
     ArchivePdf::dispatchSync($file->id);
 
@@ -205,11 +207,21 @@ test('ohne Kennzeichnung bleibt das Original die Hauptdatei', function () {
         ->and($file->fresh()->isOriginalReplaced())->toBeFalse();
 });
 
+test('mit replace=never bleibt das Original die Hauptdatei', function () {
+    fakeArchiveTools();
+    config(['files.archive.original.replace' => 'never']);
+    $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
+    $originalPath = $file->file;
+
+    ArchivePdf::dispatchSync($file->id);
+
+    expect($file->fresh()->file)->toBe($originalPath);
+});
+
 test('ohne gültige PDF/A-Validierung wird nicht ersetzt', function () {
     fakeArchiveTools(compliant: false);
     $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
     $originalPath = $file->file;
-    $file->setOwn(true);
 
     ArchivePdf::dispatchSync($file->id);
 
@@ -219,16 +231,17 @@ test('ohne gültige PDF/A-Validierung wird nicht ersetzt', function () {
         ->and($file->isOriginalReplaced())->toBeFalse();
 });
 
-test('der Schalter ersetzt nachträglich und holt das Original wieder zurück', function () {
+test('der Schalter holt das Original zurück und ersetzt es wieder', function () {
     fakeArchiveTools();
     $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
     $originalPath = $file->file;
+    $file->setOriginalDocument(true);
     ArchivePdf::dispatchSync($file->id);
 
-    $file->refresh()->setOwn(true);
+    $file->refresh()->setOriginalDocument(false);
     expect($file->fresh()->isOriginalReplaced())->toBeTrue();
 
-    $file->refresh()->setOwn(false);
+    $file->refresh()->setOriginalDocument(true);
     $file->refresh();
 
     expect($file->isOriginalReplaced())->toBeFalse()
@@ -242,7 +255,6 @@ test('der Schalter ersetzt nachträglich und holt das Original wieder zurück', 
 test('ein ersetztes Original wird nicht erneut archiviert', function () {
     fakeArchiveTools();
     $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
-    $file->setOwn(true);
     ArchivePdf::dispatchSync($file->id);
     $before = $file->fresh()->archive();
 
@@ -253,9 +265,8 @@ test('ein ersetztes Original wird nicht erneut archiviert', function () {
 
 test('files:prune-trash löscht Originale erst nach Ablauf der Frist', function () {
     fakeArchiveTools();
-    config(['files.archive.own.trash_days' => 90]);
+    config(['files.archive.original.trash_days' => 90]);
     $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
-    $file->setOwn(true);
     ArchivePdf::dispatchSync($file->id);
     $trashPath = $file->fresh()->archive()['original']['trash_path'];
 
@@ -270,28 +281,38 @@ test('files:prune-trash löscht Originale erst nach Ablauf der Frist', function 
     $file->refresh();
     expect($file->hasTrashedOriginal())->toBeFalse()
         ->and($file->archive()['original']['purged_at'])->not->toBeNull()
-        ->and($file->setOwn(false))->toBeNull()
+        ->and($file->setOriginalDocument(true))->toBeNull()
         ->and($file->fresh()->isOriginalReplaced())->toBeTrue();
 });
 
-test('Vorbelegung: ausdrücklich, Import-Disk, Erzeugerprogramm', function () {
+test('Vorbelegung Original Dokument: ausdrücklich, Import-Disk, Erzeugerprogramm', function () {
     config([
-        'files.archive.own.disks' => ['scan_inbox'],
-        'files.archive.own.producers' => ['libreoffice'],
+        'files.archive.original.disks' => ['scan_inbox'],
+        'files.archive.original.producers' => ['libreoffice'],
     ]);
     $path = tempnam(sys_get_temp_dir(), 'pdf');
-    file_put_contents($path, ARCHIVE_OWN_PDF);
+    file_put_contents($path, ARCHIVE_PRODUCER_PDF);
 
-    expect(File::detectOwn($path, false)['source'])->toBe('app')
-        ->and(File::detectOwn($path, false)['value'])->toBeFalse()
-        ->and(File::detectOwn($path, null, 'scan_inbox')['source'])->toBe('disk')
-        ->and(File::detectOwn($path)['value'])->toBeTrue()
-        ->and(File::detectOwn($path)['source'])->toBe('producer')
-        ->and(File::detectOwn($path)['producer'])->toBe('Writer / LibreOffice 24.2');
+    expect(File::detectOriginalDocument($path, false)['source'])->toBe('app')
+        ->and(File::detectOriginalDocument($path, false)['value'])->toBeFalse()
+        ->and(File::detectOriginalDocument($path, null, 'scan_inbox')['source'])->toBe('disk')
+        ->and(File::detectOriginalDocument($path)['value'])->toBeTrue()
+        ->and(File::detectOriginalDocument($path)['source'])->toBe('producer')
+        ->and(File::detectOriginalDocument($path)['producer'])->toBe('Writer / LibreOffice 24.2');
 
     file_put_contents($path, ARCHIVE_PLAIN_PDF);
-    expect(File::detectOwn($path)['value'])->toBeFalse()
-        ->and(File::detectOwn($path)['source'])->toBe('none');
+    expect(File::detectOriginalDocument($path)['value'])->toBeFalse()
+        ->and(File::detectOriginalDocument($path)['source'])->toBe('none');
 
     unlink($path);
+});
+
+test('ausdrückliche Wahl des früheren Schalters „Eigenes Dokument“ wird umgekehrt übernommen', function () {
+    $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
+
+    $file->mergeJson('custom_properties', ['own' => ['value' => false, 'source' => 'user', 'producer' => null]]);
+    expect($file->fresh()->isOriginalDocument())->toBeTrue();
+
+    $file->mergeJson('custom_properties', ['own' => ['value' => false, 'source' => 'none', 'producer' => null]]);
+    expect($file->fresh()->isOriginalDocument())->toBeFalse();
 });

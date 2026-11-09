@@ -7,8 +7,9 @@ Original (unverändert) → OCR → PDF/A-2b + Optimierung → Validierung → S
                          ocrmypdf                        veraPDF      pyHanko (PAdES, RFC 3161)
 ```
 
-- Das **Original** bleibt bitgenau erhalten; seine SHA-256-Prüfsumme wird gespeichert.
-  Ausnahme: Bei **eigenen Dokumenten** ersetzt die Archivfassung das Original (siehe unten).
+- Die SHA-256-Prüfsumme des **Originals** wird gespeichert. Standardmäßig ersetzt die
+  geprüfte und gesiegelte Archivfassung das Original; nur bei **„Original Dokument“**
+  bleibt das Original bitgenau Hauptdatei (siehe unten).
 - Die Archivfassung liegt unter `…/archive/JJJJ-MM/archive-<datei>.pdf`
   (`generated_conversions.archive`).
 - Das Ergebnis jedes Schritts steht in `custom_properties.archive`.
@@ -61,12 +62,11 @@ Mögliche Status der Schritte:
 
 Im Model: `$file->archive()`, `$file->archivePdfPath()`, `$file->isArchiveSigned()`.
 
-## Eigene Dokumente: Archivfassung ersetzt das Original
+## Archivfassung ersetzt das Original (außer „Original Dokument“)
 
-Bei eigenen Dokumenten (selbst erstellte Schreiben, eigene Scans) hat das
-Original keinen eigenen Beweiswert; die Archivfassung ist die bessere Datei
-(PDF/A, durchsuchbar, meist kleiner, gesiegelt). Ist ein PDF als
-**„Eigenes Dokument“** gekennzeichnet, wird nach erfolgreicher Archivierung
+Bei Upload und Import wird standardmäßig die Archivfassung übernommen: Sie ist
+meist die bessere Datei (PDF/A, durchsuchbar, meist kleiner, gesiegelt). Nach
+erfolgreicher Archivierung wird
 
 1. die Archivfassung zur Hauptdatei (`file`, `hash`, `size`),
 2. das Original in den Papierkorb verschoben (`…/trash/JJJJ-MM/`),
@@ -74,36 +74,51 @@ Original keinen eigenen Beweiswert; die Archivfassung ist die bessere Datei
    endgültig gelöscht.
 
 Ersetzt wird nur, wenn die Archivfassung **validiert** (`compliant`) **und
-gesiegelt** (`signed`) ist. Elektronisch empfangene Dokumente Dritter sollten
-nicht gekennzeichnet werden: Nur das Original zeigt bitgenau, was eingegangen
-ist; außerdem entfernt PDF/A eingebettete Dateien und JavaScript.
+gesiegelt** (`signed`) ist. Ist ein PDF als **„Original Dokument“**
+gekennzeichnet, bleibt das Original die Hauptdatei. Das empfiehlt sich für
+elektronisch empfangene Dokumente Dritter: Nur das Original zeigt bitgenau, was
+eingegangen ist; außerdem entfernt PDF/A eingebettete Dateien und JavaScript.
+Das beA-Package importiert seine Dateien deshalb immer als Original Dokument;
+bereits signierte PDFs werden ohnehin nicht archiviert und damit nie ersetzt.
 
-### Vorbelegung des Schalters nach Quelle
+Nach jedem Austausch der Hauptdatei (Ersetzen wie Wiederherstellen) feuert
+das Event `Nfgarching\Files\Events\FileReplaced` (`file`, `oldPath`,
+`oldHash`, `reason` = `archive`|`restore`). Anwendungen, die Pfad oder Hash
+selbst gespeichert haben, ziehen ihn dort nach – in AkV
+`App\Listeners\RecieveFileReplaced` für `Dokumente.Attachment`.
+
+### Vorbelegung des Schalters „Original Dokument“ nach Quelle
+
+Ohne Treffer ist der Schalter aus, die Archivfassung wird übernommen.
 
 | Quelle | Vorbelegung |
 |---|---|
-| Von der App erzeugt | ausdrücklich: `File::storeUpload($upload, ['own' => true])` bzw. `File::importFromDisk($disk, $path, ['own' => true])` |
-| Import aus einem Ordner | an, wenn die Disk in `FILES_OWN_DISKS` steht (z. B. der Scan-Eingang) |
-| Upload | an, wenn das Erzeugerprogramm laut PDF-Metadaten einen Eintrag aus `FILES_OWN_PRODUCERS` enthält |
+| Von der App übergeben | ausdrücklich: `File::storeUpload($upload, ['original' => true])` bzw. `File::importFromDisk($disk, $path, ['original' => true])` |
+| Mail-Anhang (mails-Package) | nach Absender (`Nfgarching\Mails\Services\OwnSender`): eigener Absender → aus (Archivfassung), externer Absender → an (Original). In AkV: Adressen aus `config/kanzlei.php` (`email`, `email_ausschluss`) und der Bearbeiter (`App\Mail\KanzleiAdressen`); ohne App-Resolver `MAIL_OWN_SENDERS` |
+| Import aus einem Ordner | an, wenn die Disk in `FILES_ORIGINAL_DISKS` steht (z. B. ein Eingang für Fremddokumente) |
+| Upload | an, wenn das Erzeugerprogramm laut PDF-Metadaten einen Eintrag aus `FILES_ORIGINAL_PRODUCERS` enthält |
 
 ```dotenv
-FILES_OWN_DISKS=scan_inbox
-FILES_OWN_PRODUCERS=LibreOffice,Microsoft® Word
+FILES_ORIGINAL_DISKS=fremd_inbox
+FILES_ORIGINAL_PRODUCERS=
 ```
 
-Das erkannte Erzeugerprogramm steht in `custom_properties.own.producer` und wird
-beim Upload als Hinweis am Schalter sowie in der Detailansicht angezeigt – so
-lässt sich ablesen, welche Einträge für `FILES_OWN_PRODUCERS` passen. Metadaten
-sind nur ein Hinweis: Auch fremde Word-PDFs tragen „Microsoft® Word“.
+Die frühere Option `'own' => bool` wird noch angenommen und umgekehrt
+ausgewertet (`'own' => false` = Original Dokument).
+
+Das erkannte Erzeugerprogramm steht in `custom_properties.original_document.producer`
+und wird beim Upload als Hinweis am Schalter sowie in der Detailansicht
+angezeigt – so lässt sich ablesen, welche Einträge für `FILES_ORIGINAL_PRODUCERS`
+passen. Metadaten sind nur ein Hinweis.
 
 ### Schalter
 
-- **Upload:** pro PDF ein Schalter „Eigenes Dokument“.
-- **Import:** ein Schalter für die ausgewählten Dateien.
+- **Upload:** pro PDF ein Schalter „Original Dokument“.
+- **Import:** ein Schalter „Original Dokumente“ für die ausgewählten Dateien.
 - **Detailansicht** (Tab „Home“, Karte „Archiv“): jederzeit umschaltbar.
 
-Wird der Schalter eingeschaltet, nachdem die Archivfassung schon fertig ist,
-wird sofort ersetzt. Wird er ausgeschaltet, solange das Original noch im
+Wird der Schalter ausgeschaltet, nachdem die Archivfassung schon fertig ist,
+wird sofort ersetzt. Wird er eingeschaltet, solange das Original noch im
 Papierkorb liegt, wird das Original zurückgeholt; die Archivfassung bleibt
 unter `generated_conversions.archive` erhalten. Nach der endgültigen Löschung
 ist kein Zurückholen mehr möglich.
@@ -122,7 +137,7 @@ sail artisan files:prune-trash             # Frist aus FILES_TRASH_DAYS
 ### Angaben in `custom_properties`
 
 ```json
-"own": { "value": true, "source": "producer", "producer": "Writer / LibreOffice 24.2" },
+"original_document": { "value": false, "source": "none", "producer": "Writer / LibreOffice 24.2" },
 "archive": {
   "status": "archived", "replaced": true, "...": "…",
   "original": {
@@ -136,8 +151,10 @@ sail artisan files:prune-trash             # Frist aus FILES_TRASH_DAYS
 
 `source`: `user` (Schalter), `app`, `disk`, `producer`, `none`. Nach dem
 Zurückholen steht in `original` `restored_at`, nach dem Löschen `purged_at`.
+Altbestand mit dem früheren Schlüssel `own` („Eigenes Dokument“) wird gelesen:
+Eine ausdrückliche Wahl (`source` `user`/`app`) gilt umgekehrt, sonst der Standard.
 
-Im Model: `isOwn()`, `setOwn(bool)`, `isOriginalReplaced()`,
+Im Model: `isOriginalDocument()`, `setOriginalDocument(bool)`, `originalDocument()`, `isOriginalReplaced()`,
 `hasTrashedOriginal()`, `replaceOriginalWithArchive()`, `restoreOriginal()`.
 
 ## Benötigte Programme
@@ -205,8 +222,65 @@ Acrobat, EU-DSS) zeigen die Signatur als „Aussteller unbekannt“, bis
 
 Für den Echtbetrieb ein **Siegelzertifikat** (fortgeschrittenes oder
 qualifiziertes elektronisches Siegel) eines Vertrauensdiensteanbieters als
-PKCS#12-Datei verwenden und einen qualifizierten Zeitstempeldienst eintragen.
-Es ändert sich nur die `.env`.
+PKCS#12-Datei verwenden und gegebenenfalls einen qualifizierten
+Zeitstempeldienst eintragen (siehe unten). Für das Siegel ändert sich nur die
+`.env`; ein Zeitstempeldienst mit Anmeldung erfordert eine Code-Änderung.
+
+### Zeitstempeldienst
+
+Stand 11/2026, Recherche ohne Gewähr – vor einer Entscheidung neu prüfen.
+
+**Derzeit:** FreeTSA (`https://freetsa.org/tsr`). Der Dienst ist kostenlos, ohne
+Anmeldung und RFC-3161-konform, aber **nicht eIDAS-qualifiziert**. Die
+PDF-Prüfung zeigt ihn nur dann als vertrauenswürdig an, wenn sein
+Wurzelzertifikat als Vertrauensanker eingetragen ist (siehe
+[PDF-Pruefung.md](PDF-Pruefung.md#vertrauensanker)).
+
+**Gibt es einen kostenlosen qualifizierten Zeitstempeldienst? Nein.**
+
+- Die freien RFC-3161-Dienste (FreeTSA, Open TSA, `time.certum.pl` u. a.) sind
+  nicht qualifiziert. Ein Abgleich von neun freien Diensten mit der
+  EU-Vertrauensliste (10/2026) fand keinen qualifizierten; teils betreiben
+  dieselben Firmen kostenpflichtig auch qualifizierte Dienste.
+- Qualifizierte Anbieter (z. B. AlfaTrust, GlobalTrust, qtsa.eu) bieten höchstens
+  Testkontingente (AlfaTrust: 50 Zeitstempel), danach kostenpflichtig, meist mit
+  Konto/Zugangsdaten. Preise sind nicht recherchiert.
+
+**Rechtliche Wirkung (Art. 41 eIDAS-VO):**
+
+- Ein einfacher Zeitstempel darf nicht allein deshalb als Beweis abgelehnt
+  werden, weil er elektronisch ist (Abs. 1) – er unterliegt der freien
+  Beweiswürdigung.
+- Nur der **qualifizierte** Zeitstempel hat EU-weit die Vermutung, dass Datum und
+  Uhrzeit richtig sind und die Daten seitdem unverändert sind (Abs. 2).
+
+**Bewertung:** Für das eigene Archivsiegel genügt FreeTSA in der Regel. Es
+belegt, dass die Archivfassung seit dem Zeitpunkt unverändert ist; die GoBD
+schreiben keinen qualifizierten Zeitstempel vor. Ein qualifizierter Dienst
+lohnt sich erst, wenn das Datum ohne weiteren Nachweis anerkannt werden soll
+(Gericht, Gegenseite) oder für eine Beweiswerterhaltung nach BSI TR-ESOR.
+
+**Wechsel auf einen anderen Dienst:**
+
+1. Status in der EU-Vertrauensliste prüfen: <https://eidas.ec.europa.eu/efda/trust-services/browse/eidas/tls>
+   – Diensttyp „Qualified time stamp“.
+2. Anmeldung klären: `PdfSigner` übergibt nur `--timestamp-url` an die
+   pyHanko-CLI (`FILES_TSA_URL`). Verlangt der Dienst Benutzer/Passwort oder ein
+   Client-Zertifikat, muss `PdfSigner` erweitert werden (pyHanko kann das über
+   eine Konfigurationsdatei bzw. `HTTPTimeStamper`) – Zugangsdaten nur über
+   `.env`.
+3. Wurzelzertifikat des Dienstes in `FILES_INSPECT_TRUST` eintragen, sofern es
+   nicht im Zertifikatsspeicher des Systems liegt.
+4. Bereits archivierte Dateien behalten ihren FreeTSA-Zeitstempel; eine
+   Nachsiegelung (Dokumentzeitstempel, PAdES B-LTA) gibt es bisher nicht.
+
+Quellen:
+[Abgleich freier TSA mit der EU-Vertrauensliste](https://dev.to/lizhuojunx86/i-checked-nine-free-rfc-3161-endpoints-against-the-eu-trusted-list-none-is-qualified-five-of-the-djc),
+[Open TSA](https://open-tsa.eu/kostenloser-rfc-3161-zeitstempel-dienst-europa/),
+[Sealdoc: RFC-3161-Dienste für die EU](https://www.sealdoc.eu/blog/best-rfc3161-timestamp-services-eu),
+[Provlyn: eIDAS Qualified Timestamp](https://www.provlyn.com/blog/eidas-qualified-timestamp),
+[GlobalTrust Qualified Timestamp](https://globaltrust.eu/en/globaltrust-qualified-timestamp-qualified-time-stamp-according-to-eidas-vo-for-audit-proof-document-management/),
+[qtsa.eu](https://qtsa.eu/).
 
 Ein **beA-Softwarezertifikat ist dafür ungeeignet**: Es dient der Anmeldung am
 beA und müsste samt PIN dauerhaft auf dem Server liegen – wer den Server
@@ -237,10 +311,10 @@ Alle Werte in `config/files.php` unter `archive`:
 | `FILES_SIGN_REASON` | `Archivierung` | Grund in der Signatur |
 | `FILES_SIGN_LOCATION` / `FILES_SIGN_CONTACT` | – | optionale Angaben |
 | `FILES_SIGN_LTV` | `false` | Sperrinformationen einbetten (nur mit öffentlicher PKI) |
-| `FILES_ARCHIVE_REPLACE` | `own` | Original ersetzen: `never`, `own` (nur eigene Dokumente), `always` |
+| `FILES_ARCHIVE_REPLACE` | `archive` | Original ersetzen: `never`, `archive` (außer „Original Dokument“), `always` |
 | `FILES_ARCHIVE_REPLACE_REQUIRE_VALID` | `true` | nur ersetzen, wenn veraPDF `compliant` meldet |
-| `FILES_OWN_DISKS` | – | Import-Disks, deren Dateien als eigene Dokumente vorbelegt werden |
-| `FILES_OWN_PRODUCERS` | – | Erzeugerprogramme (Teilstrings), die als eigene Dokumente vorbelegt werden |
+| `FILES_ORIGINAL_DISKS` | – | Import-Disks, deren Dateien als „Original Dokument“ vorbelegt werden |
+| `FILES_ORIGINAL_PRODUCERS` | – | Erzeugerprogramme (Teilstrings), die als „Original Dokument“ vorbelegt werden |
 | `FILES_TRASH_DAYS` | `90` | Aufbewahrung ersetzter Originale im Papierkorb |
 | `FILES_TRASH_SCHEDULE` | `true` | `files:prune-trash` täglich einplanen |
 

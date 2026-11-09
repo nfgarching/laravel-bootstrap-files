@@ -45,7 +45,7 @@ class FileServiceProvider extends ServiceProvider
         }
 
         // Papierkorb für ersetzte Originale täglich bereinigen
-        if (config('files.archive.own.schedule_prune', true)) {
+        if (config('files.archive.original.schedule_prune', true)) {
             $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
                 $schedule->command('files:prune-trash')->dailyAt('03:17')->withoutOverlapping();
             });

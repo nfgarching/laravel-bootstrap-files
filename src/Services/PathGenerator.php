@@ -7,7 +7,9 @@ use Nfgarching\Files\Models\File;
 class PathGenerator
 {
     public string $prefix = '';
+
     public string $suffix = '';
+
     public string $postfix = '';
 
     public function __construct()
@@ -28,7 +30,7 @@ class PathGenerator
                 '/files'.
                 '/'.date('Y-m', strtotime($fileitem->created_at)).
                ($this->postfix ? '/'.$this->postfix : '');
-                // $fileitem->id.'';
+        // $fileitem->id.'';
     }
 
     /*
@@ -42,7 +44,7 @@ class PathGenerator
                 '/convs'.
                 '/'.date('Y-m', strtotime($fileitem->created_at)).
                ($this->postfix ? '/'.$this->postfix : '');
-                // $fileitem->id.'';
+        // $fileitem->id.'';
         // return ($this->prefix ? $this->prefix.'/' : '').
         //         date('Y', strtotime($fileitem->created_at)).'/'.
         //        ($this->suffix ? $this->suffix.'/' : '').
@@ -63,7 +65,7 @@ class PathGenerator
                 '/ocrs'.
                 '/'.date('Y-m', strtotime($fileitem->created_at)).
                ($this->postfix ? '/'.$this->postfix : '');
-                // $fileitem->id.'';
+        // $fileitem->id.'';
         // return ($this->prefix ? $this->prefix.'/' : '').
         //         date('Y', strtotime($fileitem->created_at)).'/'.
         //        ($this->suffix ? $this->suffix.'/' : '').
@@ -84,7 +86,7 @@ class PathGenerator
                 '/respos'.
                 '/'.date('Y-m', strtotime($fileitem->created_at)).
                ($this->postfix ? '/'.$this->postfix : '');
-                // $fileitem->id.'';
+        // $fileitem->id.'';
         // return ($this->prefix ? $this->prefix.'/' : '').
         //         date('Y', strtotime($fileitem->created_at)).'/'.
         //        ($this->suffix ? $this->suffix.'/' : '').

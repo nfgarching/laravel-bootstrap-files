@@ -62,7 +62,7 @@ class ImportController
             $fileItem = File::importFromDisk(
                 $request->input('disk'),
                 $sourcePath,
-                $request->has('own') ? ['own' => $request->boolean('own')] : []
+                $request->has('original') ? ['original' => $request->boolean('original')] : []
             );
             $fileIds[] = $fileItem->id;
         }

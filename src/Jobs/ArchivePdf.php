@@ -169,7 +169,7 @@ class ArchivePdf implements ShouldQueue
         }
         Log::channel('files')->info('#'.$file->id.' ArchivePdf: archiviert ('.$target.')');
 
-        // Eigenes Dokument: Archivfassung wird Hauptdatei, Original in den Papierkorb.
+        // Archivfassung wird Hauptdatei, Original in den Papierkorb (außer „Original Dokument“).
         // Frisch laden – der Schalter kann während der Verarbeitung umgestellt worden sein.
         $file->refresh();
         if ($file->shouldReplaceOriginal()) {

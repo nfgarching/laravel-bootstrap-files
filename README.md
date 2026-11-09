@@ -202,7 +202,7 @@ FileType::options();                   // → ['image' => 'Bild', 'pdf' => 'PDF'
 | `$file->archive()` | Ergebnis der Archivierung (PDF/A, Validierung, Siegel) |
 | `$file->archivePdfPath()` | Pfad der Archivfassung |
 | `$file->isArchiveSigned()` | Archivfassung gesiegelt? |
-| `$file->isOwn()` / `$file->setOwn(bool)` | Schalter „Eigenes Dokument“ (ersetzt bzw. holt Original zurück) |
+| `$file->isOriginalDocument()` / `$file->setOriginalDocument(bool)` | Schalter „Original Dokument“ (behält bzw. holt Original zurück; aus = Archivfassung ersetzt) |
 | `$file->isOriginalReplaced()` | Archivfassung ist Hauptdatei, Original im Papierkorb |
 
 ---
@@ -211,7 +211,7 @@ FileType::options();                   // → ['image' => 'Bild', 'pdf' => 'PDF'
 
 Jedes PDF erhält nach der OCR eine Archivfassung: PDF/A-2b (ocrmypdf),
 validiert (veraPDF), mit PAdES-Siegel und RFC-3161-Zeitstempel (pyHanko).
-Das Original bleibt unverändert, bereits signierte PDFs werden nicht angefasst.
+Bereits signierte PDFs werden nicht angefasst.
 
 ```bash
 php artisan files:make-test-certificate   # Testzertifikat erzeugen
@@ -220,8 +220,9 @@ php artisan files:archive --all           # vorhandene PDFs nachträglich archiv
 php artisan files:prune-trash             # ersetzte Originale nach 90 Tagen löschen
 ```
 
-Bei PDFs mit Schalter **„Eigenes Dokument“** ersetzt die Archivfassung das
-Original; das Original bleibt 90 Tage im Papierkorb.
+Standardmäßig ersetzt die geprüfte und gesiegelte Archivfassung das Original;
+das Original bleibt 90 Tage im Papierkorb. Bei PDFs mit Schalter
+**„Original Dokument“** bleibt das Original die Hauptdatei.
 
 Details, Installation und Konfiguration: [docs/Archivierung.md](docs/Archivierung.md)
 

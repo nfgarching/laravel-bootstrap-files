@@ -4,6 +4,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\ViewErrorBag;
 use Nfgarching\Files\Jobs\ProcessFile;
 use Nfgarching\Files\Models\File;
 
@@ -15,7 +16,7 @@ beforeEach(function () {
     $this->withoutMiddleware();
 
     // Share empty errors bag with all views for testing
-    view()->share('errors', session()->get('errors', new \Illuminate\Support\ViewErrorBag));
+    view()->share('errors', session()->get('errors', new ViewErrorBag));
 });
 
 it('displays upload form', function () {

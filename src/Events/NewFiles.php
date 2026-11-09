@@ -16,10 +16,13 @@ class NewFiles
     public array $fileIds;
 
     public ?string $model_type;
+
     public ?int $model_id;
+
     public ?string $subject;
 
     public array $data;
+
     public string $route;
 
     /**

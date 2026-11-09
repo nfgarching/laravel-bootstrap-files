@@ -40,7 +40,7 @@ class PdfInspector
      * Erzeugerprogramm laut PDF-Metadaten (XMP CreatorTool/Producer bzw.
      * Info-Wörterbuch /Creator, /Producer), z. B. „LibreOffice 24.2“.
      *
-     * Nur ein Hinweis für die Vorbelegung „Eigenes Dokument“ – Metadaten
+     * Nur ein Hinweis für die Vorbelegung „Original Dokument“ – Metadaten
      * lassen sich beliebig setzen und fehlen bei manchen PDFs ganz (etwa wenn
      * das Info-Wörterbuch in einem komprimierten Objektstrom liegt).
      */

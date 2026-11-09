@@ -30,8 +30,8 @@ class Import extends Component
 
     public string $subject = '';
 
-    /** Schalter „Eigene Dokumente“, vorbelegt nach files.archive.own.disks */
-    public bool $own = false;
+    /** Schalter „Original Dokumente“ (Original behalten), vorbelegt nach files.archive.original.disks */
+    public bool $original = false;
 
     public string $sort = 'lastModified';
 
@@ -68,7 +68,7 @@ class Import extends Component
         // $this->modelId = request()->integer('model_id') ?: null;
         $this->disk = request()->string('disk', config('files.scan_inbox.disk'))->toString();
         $this->path = request()->string('path', config('files.scan_inbox.path'))->toString();
-        $this->own = in_array($this->disk, (array) config('files.archive.own.disks', []), true);
+        $this->original = in_array($this->disk, (array) config('files.archive.original.disks', []), true);
         if (request()->has('model_type')) {
             $this->modelType = request()->string('model_type', '')->toString();
             $this->modelId = request()->integer('model_id') ?: 0;
@@ -191,7 +191,7 @@ class Import extends Component
 
         $fileIds = [];
         foreach ($this->selectedFiles as $sourcePath) {
-            $fileItem = File::importFromDisk($this->disk, $sourcePath, ['own' => $this->own]);
+            $fileItem = File::importFromDisk($this->disk, $sourcePath, ['original' => $this->original]);
             if ($fileItem) {
                 $fileIds[] = $fileItem->id;
             }

@@ -194,9 +194,9 @@
                 <input type="text" wire:model.live="subject" class="form-control" placeholder="Bezeichnung..."
                     @disabled($modelId)>
                 <div class="form-check form-switch mb-0 text-nowrap"
-                    title="PDF/A-Fassung ersetzt das Original, Original {{ config('files.archive.own.trash_days', 90) }} Tage im Papierkorb">
-                    <input class="form-check-input" type="checkbox" role="switch" id="import-own" wire:model="own">
-                    <label class="form-check-label small" for="import-own">Eigene Dokumente</label>
+                    title="An: Original bleibt Hauptdatei. Aus: geprüfte PDF/A-Fassung ersetzt das Original, Original {{ config('files.archive.original.trash_days', 90) }} Tage im Papierkorb">
+                    <input class="form-check-input" type="checkbox" role="switch" id="import-original" wire:model="original">
+                    <label class="form-check-label small" for="import-original">Original Dokumente</label>
                 </div>
                 <button type="button" class="btn btn-sm btn-primary text-nowrap" wire:click="importFiles"
                     wire:loading.attr="disabled" wire:target="importFiles" @disabled(empty($selectedFiles))>

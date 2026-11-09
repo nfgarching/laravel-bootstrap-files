@@ -3,11 +3,12 @@
 namespace Nfgarching\Files\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 use Nfgarching\Files\Models\File;
 
 /**
  * Löscht Originale im Papierkorb, die durch ihre Archivfassung ersetzt wurden
- * und deren Aufbewahrungsfrist (files.archive.own.trash_days) abgelaufen ist.
+ * und deren Aufbewahrungsfrist (files.archive.original.trash_days) abgelaufen ist.
  * Läuft standardmäßig täglich über den Scheduler.
  */
 class PruneTrash extends Command
@@ -20,7 +21,7 @@ class PruneTrash extends Command
 
     public function handle(): int
     {
-        $days = (int) ($this->option('days') ?? config('files.archive.own.trash_days', 90));
+        $days = (int) ($this->option('days') ?? config('files.archive.original.trash_days', 90));
         $cutoff = now()->subDays($days);
         $dry = (bool) $this->option('dry-run');
         $count = 0;
@@ -30,7 +31,7 @@ class PruneTrash extends Command
             ->lazyById()
             ->each(function (File $file) use ($cutoff, $dry, &$count) {
                 $trashedAt = $file->archive()['original']['trashed_at'] ?? null;
-                if (! $file->hasTrashedOriginal() || ! $trashedAt || \Illuminate\Support\Carbon::parse($trashedAt)->gt($cutoff)) {
+                if (! $file->hasTrashedOriginal() || ! $trashedAt || Carbon::parse($trashedAt)->gt($cutoff)) {
                     return;
                 }
 

@@ -41,7 +41,7 @@ class PdfInspection
             $original = $archive['original'] ?? [];
 
             if ($file->isOriginalReplaced()) {
-                // Eigenes Dokument: Hauptdatei ist die Archivfassung, das Original
+                // Original ersetzt: Hauptdatei ist die Archivfassung, das Original
                 // liegt im Papierkorb oder ist nach Fristablauf gelöscht
                 $variants = ['original' => $file->hasTrashedOriginal()
                     ? $this->variant(

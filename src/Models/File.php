@@ -418,14 +418,14 @@ class File extends Model
     }
 
     /**
-     * @param  array<string, mixed>  $arr_input  Spaltenwerte; zusätzlich 'own' (bool)
-     *                                           für „Eigenes Dokument“, sonst Vorbelegung
+     * @param  array<string, mixed>  $arr_input  Spaltenwerte; zusätzlich 'original' (bool)
+     *                                           für „Original Dokument“, sonst Vorbelegung
      *                                           nach Import-Disk bzw. Erzeugerprogramm
      */
     public static function importFromDisk(string $sourceDisk, string $sourceFile, array $arr_input = []): self
     {
-        $explicitOwn = array_key_exists('own', $arr_input) ? (bool) $arr_input['own'] : null;
-        unset($arr_input['own'], $arr_input['file_type']);
+        $explicitOriginal = static::explicitOriginalDocument($arr_input);
+        unset($arr_input['original'], $arr_input['own'], $arr_input['file_type']);
 
         $extension = strtolower(pathinfo($sourceFile, PATHINFO_EXTENSION));
 
@@ -509,7 +509,7 @@ class File extends Model
 
         Log::channel('files')->info('#'.$file->id.' Inbox Import: '.$file->name);
 
-        $file->markOwnFromDisk($explicitOwn, $sourceDisk);
+        $file->markOriginalDocument($explicitOriginal, $sourceDisk);
 
         // ProcessFile::dispatch($file->id);
         ProcessFile::dispatchSync($file->id);
@@ -518,24 +518,39 @@ class File extends Model
     }
 
     /**
-     * Vorbelegung „Eigenes Dokument“ für ein PDF, bevor die Verarbeitung startet.
+     * Ausdrückliche Vorgabe „Original Dokument“ aus den Optionen; 'own'
+     * (früherer Schalter „Eigenes Dokument“) wird umgekehrt übernommen.
+     *
+     * @param  array<string, mixed>  $options
      */
-    protected function markOwnFromDisk(?bool $explicit, ?string $sourceDisk = null): void
+    protected static function explicitOriginalDocument(array $options): ?bool
+    {
+        return match (true) {
+            array_key_exists('original', $options) => (bool) $options['original'],
+            array_key_exists('own', $options) => ! $options['own'],
+            default => null,
+        };
+    }
+
+    /**
+     * Vorbelegung „Original Dokument“ für ein PDF, bevor die Verarbeitung startet.
+     */
+    public function markOriginalDocument(?bool $explicit, ?string $sourceDisk = null): void
     {
         if ($this->type !== FileType::Pdf) {
             return;
         }
 
-        $local = tempnam(sys_get_temp_dir(), 'own');
+        $local = tempnam(sys_get_temp_dir(), 'orig');
         try {
             $stream = Storage::disk($this->disk)->readStream($this->file);
             if ($stream) {
                 file_put_contents($local, $stream);
                 fclose($stream);
             }
-            $this->mergeJson('custom_properties', ['own' => static::detectOwn($local, $explicit, $sourceDisk)]);
+            $this->mergeJson('custom_properties', ['original_document' => static::detectOriginalDocument($local, $explicit, $sourceDisk)]);
         } catch (\Throwable $e) {
-            Log::channel('files')->warning('#'.$this->id.' Eigenes Dokument: Erkennung fehlgeschlagen: '.$e->getMessage());
+            Log::channel('files')->warning('#'.$this->id.' Original Dokument: Erkennung fehlgeschlagen: '.$e->getMessage());
         } finally {
             @unlink($local);
         }
@@ -547,14 +562,14 @@ class File extends Model
     }
 
     /**
-     * @param  array<string, mixed>  $options  'own' (bool) setzt „Eigenes Dokument“
-     *                                         ausdrücklich, z. B. für von der App
-     *                                         erzeugte PDFs; sonst Vorbelegung nach
-     *                                         Erzeugerprogramm
+     * @param  array<string, mixed>  $options  'original' (bool) setzt „Original Dokument“
+     *                                         ausdrücklich, z. B. für empfangene PDFs,
+     *                                         deren Original erhalten bleiben soll;
+     *                                         sonst Vorbelegung nach Erzeugerprogramm
      */
     public static function storeUpload($upload, array $options = [])
     {
-        $explicitOwn = array_key_exists('own', $options) ? (bool) $options['own'] : null;
+        $explicitOriginal = static::explicitOriginalDocument($options);
 
         // dump($upload, $arr_input);
         if (! $upload->isValid()) {
@@ -613,7 +628,7 @@ class File extends Model
         // $file->update(array_merge($arr, $arr_input));
         Log::channel('files')->info('#'.$file->id.' '.$file->name.' uploaded successfully');
 
-        $file->markOwnFromDisk($explicitOwn);
+        $file->markOriginalDocument($explicitOriginal);
 
         ProcessFile::dispatchSync($file->id);
 

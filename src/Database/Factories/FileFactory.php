@@ -4,13 +4,15 @@ namespace Nfgarching\Files\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Nfgarching\Files\Enums\FileType;
+use Nfgarching\Files\Models\File;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Nfgarching\Files\Models\File>
+ * @extends Factory<File>
  */
 class FileFactory extends Factory
 {
-    protected $model = \Nfgarching\Files\Models\File::class;
+    protected $model = File::class;
 
     /**
      * Define the model's default state.
@@ -28,7 +30,7 @@ class FileFactory extends Factory
             'model_id' => 1,
             'collection_name' => 'default',
             'state' => 'active',
-            'type' => \Nfgarching\Files\Enums\FileType::fromExtension($extension),
+            'type' => FileType::fromExtension($extension),
             'disk' => $this->faker->randomElement(['local', 'public', 's3']),
             'file' => $filename,
             'hash' => md5($filename),

@@ -56,11 +56,11 @@
                         <x-card>
                             <x-slot name="headerLeft">Archiv</x-slot>
                             <x-slot name="headerRight">
-                                <a class="btn btn-sm {{ $file->isOwn() ? 'btn-primary' : 'btn-outline-secondary' }}"
-                                    href="{{ route('files.action', ['id' => $file->id, 'switchTo' => 'OWN', 'value' => $file->isOwn() ? 0 : 1]) }}"
-                                    title="{{ $file->isOwn() ? 'Kennzeichnung entfernen (Original wird aus dem Papierkorb zurückgeholt)' : 'Als eigenes Dokument kennzeichnen (Archivfassung ersetzt das Original)' }}">
-                                    <i class="bi bi-{{ $file->isOwn() ? 'toggle-on' : 'toggle-off' }}"></i>
-                                    Eigenes Dokument
+                                <a class="btn btn-sm {{ $file->isOriginalDocument() ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                    href="{{ route('files.action', ['id' => $file->id, 'switchTo' => 'ORIGINAL', 'value' => $file->isOriginalDocument() ? 0 : 1]) }}"
+                                    title="{{ $file->isOriginalDocument() ? 'Kennzeichnung entfernen (Archivfassung ersetzt das Original)' : 'Als Original Dokument kennzeichnen (Original bleibt Hauptdatei bzw. wird aus dem Papierkorb zurückgeholt)' }}">
+                                    <i class="bi bi-{{ $file->isOriginalDocument() ? 'toggle-on' : 'toggle-off' }}"></i>
+                                    Original Dokument
                                 </a>
                             </x-slot>
                             <dl class="row small mb-0">
@@ -72,9 +72,9 @@
                                         · Siegel: {{ $archive['signature']['status'] ?? '–' }}
                                     @endif
                                 </dd>
-                                @if ($file->own()['producer'] ?? null)
+                                @if ($file->originalDocument()['producer'] ?? null)
                                     <dt class="col-sm-4">Erstellt mit</dt>
-                                    <dd class="col-sm-8">{{ $file->own()['producer'] }}</dd>
+                                    <dd class="col-sm-8">{{ $file->originalDocument()['producer'] }}</dd>
                                 @endif
                                 <dt class="col-sm-4">Original</dt>
                                 <dd class="col-sm-8">

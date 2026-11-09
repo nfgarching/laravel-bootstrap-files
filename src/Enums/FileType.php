@@ -126,5 +126,4 @@ enum FileType: string implements Castable
             'value'
         );
     }
-    
 }

@@ -25,7 +25,7 @@ class Upload extends Component
 
     public string $subject = '';
 
-    /** @var array<int, array{id: int, name: string, size: int, file_type: string, file_type_label: string, own: bool, own_source: ?string, producer: ?string}> */
+    /** @var array<int, array{id: int, name: string, size: int, file_type: string, file_type_label: string, original: bool, original_source: ?string, producer: ?string}> */
     public array $uploadedFiles = [];
 
     #[Validate(['files.*' => ['required', 'file', 'mimes:jpg,pdf,png', 'min:1', 'max:10240']])]
@@ -57,9 +57,9 @@ class Upload extends Component
                 'size' => $fileItem->size,
                 'file_type' => $fileType->value,
                 'file_type_label' => $fileType->label(),
-                'own' => $fileItem->isOwn(),
-                'own_source' => $fileItem->own()['source'] ?? null,
-                'producer' => $fileItem->own()['producer'] ?? null,
+                'original' => $fileItem->isOriginalDocument(),
+                'original_source' => $fileItem->originalDocument()['source'] ?? null,
+                'producer' => $fileItem->originalDocument()['producer'] ?? null,
             ];
         }
 
@@ -67,9 +67,9 @@ class Upload extends Component
     }
 
     /**
-     * Schalter „Eigenes Dokument“ für eine hochgeladene Datei umstellen.
+     * Schalter „Original Dokument“ für eine hochgeladene Datei umstellen.
      */
-    public function toggleOwn(int $id): void
+    public function toggleOriginal(int $id): void
     {
         $index = array_search($id, array_column($this->uploadedFiles, 'id'), true);
         $file = File::find($id);
@@ -77,9 +77,9 @@ class Upload extends Component
             return;
         }
 
-        $file->setOwn(! $file->isOwn());
-        $this->uploadedFiles[$index]['own'] = $file->isOwn();
-        $this->uploadedFiles[$index]['own_source'] = 'user';
+        $file->setOriginalDocument(! $file->isOriginalDocument());
+        $this->uploadedFiles[$index]['original'] = $file->isOriginalDocument();
+        $this->uploadedFiles[$index]['original_source'] = 'user';
     }
 
     public function dispatchToModel(): void

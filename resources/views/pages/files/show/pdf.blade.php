@@ -81,7 +81,7 @@
             @if (($variant['status'] ?? null) === 'purged')
                 <div class="card-body">
                     <div class="alert alert-secondary mb-0">
-                        Eigenes Dokument: Das Original wurde durch die Archivfassung ersetzt und nach Ablauf der
+                        Das Original wurde durch die Archivfassung ersetzt und nach Ablauf der
                         Frist endgültig gelöscht{{ ! empty($variant['purged_at']) ? ' ('.\Illuminate\Support\Carbon::parse($variant['purged_at'])->format('d.m.Y').')' : '' }}.
                     </div>
                 </div>

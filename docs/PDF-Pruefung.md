@@ -80,6 +80,35 @@ curl -o storage/app/private/files-signing/freetsa-cacert.pem https://freetsa.org
 FILES_INSPECT_TRUST=app/private/files-signing/test-ca.crt,app/private/files-signing/freetsa-cacert.pem
 ```
 
+Fehlt das Zertifikat, meldet der Tab beim Zeitstempel: „gültig, Dienst nicht
+vertrauenswürdig (www.freetsa.org): keine Zertifikatskette zu einem
+Vertrauensanker“ (pyHanko: `NO_CERTIFICATE_CHAIN_FOUND`).
+
+Zur Kontrolle des heruntergeladenen Zertifikats (Stand 11/2026, mit den
+Angaben auf freetsa.org abgleichen):
+
+```bash
+openssl x509 -in storage/app/private/files-signing/freetsa-cacert.pem -noout -subject -enddate -fingerprint -sha256
+# subject=O = Free TSA, OU = Root CA, CN = www.freetsa.org, … C = DE
+# notAfter=Mar  7 01:52:13 2041 GMT
+# sha256 Fingerprint=A6:37:9E:7C:EC:C0:5F:AA:3C:BF:07:60:13:D7:45:E3:27:BB:BA:A3:8C:0B:9A:F2:24:69:D4:70:1D:18:AA:BC
+```
+
+Danach Konfiguration neu laden und neu prüfen:
+
+```bash
+php artisan config:clear
+php artisan queue:restart
+php artisan files:inspect --all --force
+```
+
+Das Zertifikat liegt unter `storage/` und ist nicht im Git: Jede Instanz
+(ws088, NAS) braucht die Datei und die `.env`-Zeile selbst.
+
+„Vertrauenswürdig“ heißt hier nur: Kette bis zu einem selbst eingetragenen
+Anker. FreeTSA ist **kein qualifizierter** Zeitstempeldienst nach eIDAS – siehe
+[Archivierung.md, Abschnitt Zeitstempeldienst](Archivierung.md#zeitstempeldienst).
+
 ## Konfiguration
 
 `config/files.php` unter `inspect`:
@@ -115,10 +144,10 @@ und die Vertrauensanker.
 | `Services\Archive\PdfaValidator` | veraPDF, liefert jetzt auch `rules` (Klausel, Beschreibung, Meldung; max. 50) |
 | `resources/views/pages/files/show/pdf.blade.php` | Tab „PDF“ |
 
-## Eigene Dokumente
+## Ersetzte Originale
 
 Ist das Original durch die Archivfassung ersetzt (siehe
-[Archivierung.md](Archivierung.md#eigene-dokumente-archivfassung-ersetzt-das-original)),
+[Archivierung.md](Archivierung.md#archivfassung-ersetzt-das-original-außer-original-dokument)),
 prüft der Tab „PDF“ als „Original“ die Datei im Papierkorb (mit Hinweis auf das
 Löschdatum) bzw. zeigt nach Fristablauf, dass das Original gelöscht ist. Nach
-dem Umschalten des Schalters „Eigenes Dokument“ wird automatisch neu geprüft.
+dem Umschalten des Schalters „Original Dokument“ wird automatisch neu geprüft.

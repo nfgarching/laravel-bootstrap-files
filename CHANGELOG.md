@@ -17,6 +17,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Changed
 
+- Schalter „Eigenes Dokument“ heißt jetzt „Original Dokument“ mit umgekehrter Logik: Standardmäßig ersetzt bei Upload und Import die Archivfassung das Original; „Original Dokument“ behält es. API `isOriginalDocument()`/`setOriginalDocument()`/`detectOriginalDocument()`, Option `'original'` (`'own'` wird umgekehrt noch angenommen), `custom_properties.original_document`, Config `files.archive.original.*`, Env `FILES_ORIGINAL_DISKS`/`FILES_ORIGINAL_PRODUCERS`, `FILES_ARCHIVE_REPLACE` Standard `archive`.
 - OCR erzeugt ausdrücklich PDF/A (`FILES_PDFA_OUTPUT_TYPE`) mit Optimierung (`FILES_PDFA_OPTIMIZE`).
 - Abhängigkeit `nfgarching/core` in `require` eingetragen, PHP-Mindestversion an Core angeglichen (^8.4); Chatbot nur noch als `suggest`.
 - S3-Endpoints der Zusatz-Disks über `S3_ENDPOINT` / `S3_BACKUP_ENDPOINT` konfigurierbar.
