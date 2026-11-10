@@ -32,6 +32,46 @@ except ImportError as exc:  # pragma: no cover - nur ohne pyHanko-Installation
     print(json.dumps({"ok": False, "notool": True, "error": f"pyHanko nicht importierbar: {exc}"}))
     sys.exit(0)
 
+
+def patch_fetch_timeouts():
+    """
+    Die aiohttp-Abrufer von pyhanko-certvalidator fangen nur aiohttp.ClientError
+    ab; eine Zeitüberschreitung (asyncio.TimeoutError) schlägt daher trotz
+    revocation_mode="soft-fail" bis zur Signaturprüfung durch – z. B. beim
+    nicht erreichbaren OCSP-Responder von FreeTSA (http://www.freetsa.org:2560).
+    Hier wird sie in den passenden *FetchError übersetzt, den soft-fail wie
+    jeden anderen Abruffehler behandelt (dann zählt z. B. die CRL).
+    """
+    try:
+        from pyhanko_certvalidator import errors
+        from pyhanko_certvalidator.fetchers.aiohttp_fetchers import (
+            cert_fetch_client,
+            crl_client,
+            ocsp_client,
+        )
+    except ImportError:  # pragma: no cover - andere Fetcher-Ausstattung
+        return
+
+    def guard(module, name, error):
+        original = getattr(module, name, None)
+        if original is None:
+            return
+
+        async def wrapper(*args, **kwargs):
+            try:
+                return await original(*args, **kwargs)
+            except TimeoutError as exc:
+                raise error(f"Zeitüberschreitung bei {name.removeprefix('_grab_').upper()}-Abruf") from exc
+
+        setattr(module, name, wrapper)
+
+    guard(ocsp_client, "_grab_ocsp", errors.OCSPFetchError)
+    guard(crl_client, "_grab_crl", errors.CRLFetchError)
+    guard(cert_fetch_client, "_grab_certs", errors.CertificateFetchError)
+
+
+patch_fetch_timeouts()
+
 # DER-kodierte OIDs der QC-Statements (ETSI EN 319 412-5)
 QC_OIDS = {
     "compliance": bytes.fromhex("060604008e460101"),  # 0.4.0.1862.1.1 QcCompliance
@@ -149,7 +189,22 @@ def widget_info(sig):
         return {"visible": False}
 
 
-def signature_entry(sig, reader, vc):
+def error_text(exc):
+    """Fehlertext; asyncio.TimeoutError u. ä. haben keine Meldung."""
+    message = str(exc).strip()
+    if isinstance(exc, TimeoutError) and not message:
+        message = "Zeitüberschreitung beim Abruf von Sperrinformationen (OCSP/CRL) oder Zertifikaten"
+    return f"{type(exc).__name__}: {message}" if message else type(exc).__name__
+
+
+def validate(sig, entry, vc):
+    if entry["type"] == "timestamp":
+        return validate_pdf_timestamp(sig, validation_context=vc), None
+    status = validate_pdf_signature(sig, signer_validation_context=vc, ts_validation_context=vc)
+    return status, status.timestamp_validity
+
+
+def signature_entry(sig, reader, vc, offline_vc=None):
     obj = sig.sig_object
     sub_filter = obj.get("/SubFilter")
     entry = {
@@ -167,14 +222,19 @@ def signature_entry(sig, reader, vc):
     }
 
     try:
-        if entry["type"] == "timestamp":
-            status = validate_pdf_timestamp(sig, validation_context=vc)
-            ts = None
-        else:
-            status = validate_pdf_signature(sig, signer_validation_context=vc, ts_validation_context=vc)
-            ts = status.timestamp_validity
+        try:
+            status, ts = validate(sig, entry, vc)
+        except Exception as exc:
+            # pyHanko lässt Netzfehler beim Online-Abruf (z. B. asyncio-Timeout
+            # eines nicht erreichbaren OCSP-Responders) trotz „soft-fail“
+            # durchschlagen. Dann nur mit eingebetteten Daten prüfen und den
+            # Abruffehler gesondert melden.
+            if offline_vc is None:
+                raise
+            entry["fetch_error"] = error_text(exc)
+            status, ts = validate(sig, entry, offline_vc())
     except Exception as exc:
-        entry["error"] = f"{type(exc).__name__}: {exc}"
+        entry["error"] = error_text(exc)
         entry["signer"] = cert_info(sig.signer_cert)
         return entry
 
@@ -231,15 +291,19 @@ def main():
     try:
         with open(args.pdf, "rb") as fh:
             reader = PdfFileReader(fh, strict=False)
-            vc = ValidationContext(
-                extra_trust_roots=trust,
-                allow_fetching=args.fetch,
-                revocation_mode="soft-fail",
-            )
-            signatures = [signature_entry(sig, reader, vc) for sig in reader.embedded_signatures]
+            def context(fetch):
+                return ValidationContext(
+                    extra_trust_roots=trust,
+                    allow_fetching=fetch,
+                    revocation_mode="soft-fail",
+                )
+
+            vc = context(args.fetch)
+            offline_vc = (lambda: context(False)) if args.fetch else None
+            signatures = [signature_entry(sig, reader, vc, offline_vc) for sig in reader.embedded_signatures]
             has_dss = "/DSS" in reader.root
     except Exception as exc:
-        print(json.dumps({"ok": False, "error": f"{type(exc).__name__}: {exc}"}))
+        print(json.dumps({"ok": False, "error": error_text(exc)}))
         return
 
     print(json.dumps({

@@ -67,7 +67,7 @@ return new class extends Migration
             ]);
         }
 
-        Schema::drop('file_props');
+        // Schema::drop('file_props');
     }
 
     /**

@@ -50,7 +50,18 @@ einzelne Ampeln (`Services\Inspection\SignatureVerdict`):
 | Umfang | ganze Datei oder danach nur Prüfdaten ergänzt | danach Formular ausgefüllt, Kommentare | danach inhaltlich geändert |
 | Vertrauen | Kette bis zu einem Vertrauensanker | keine Kette, Sperrstatus unklar | Zertifikat gesperrt |
 | Zeitstempel | gültig, Dienst vertrauenswürdig | gültig, Dienst unbekannt | ungültig |
+| Sperrprüfung | (nur bei Problemen angezeigt) | Online-Abruf gescheitert, nur eingebettete Daten geprüft | – |
 | Qualifikation | QES / qualifiziertes Siegel laut Zertifikat | – | – |
+
+**Sperrprüfung:** pyHanko lässt Netzfehler beim Online-Abruf trotz
+`soft-fail` durchschlagen – z. B. einen `TimeoutError`, weil der
+OCSP-Responder von FreeTSA (`http://www.freetsa.org:2560`) nicht erreichbar
+ist. `pdf_signatures.py` übersetzt Zeitüberschreitungen daher in pyHankos
+Abruffehler (`patch_fetch_timeouts()`); soft-fail greift dann, und die
+erreichbare CRL genügt. Die Prüfung dauert dadurch rund 10 s länger (Timeout
+je Abruf). Schlägt die Online-Prüfung trotzdem fehl, prüft das Skript erneut
+nur mit eingebetteten Daten und meldet den Fehler als `fetch_error` (gelbe
+Ampel), statt die ganze Prüfung abzubrechen.
 
 **Qualifikation** beruht nur auf den QC-Statements im Zertifikat (ETSI EN
 319 412-5). Ein Abgleich mit der EU-Vertrauensliste (EUTL) findet nicht statt;

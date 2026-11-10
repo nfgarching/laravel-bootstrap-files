@@ -279,6 +279,15 @@ describe('SignatureVerdict', function () {
             ->and($trust(['trusted' => false, 'revoked' => true])['level'])->toBe(SignatureVerdict::FAIL);
     });
 
+    test('ein gescheiterter Online-Abruf ist eine Warnung, die Prüfung bleibt gültig', function () use ($sig) {
+        $aspects = collect(SignatureVerdict::aspects($sig(['fetch_error' => 'TimeoutError'])))->keyBy('label');
+
+        expect($aspects['Integrität']['level'])->toBe(SignatureVerdict::OK)
+            ->and($aspects['Sperrprüfung'])->toMatchArray(['level' => SignatureVerdict::WARN])
+            ->and($aspects['Sperrprüfung']['text'])->toContain('nur mit eingebetteten Daten geprüft (TimeoutError)')
+            ->and(collect(SignatureVerdict::aspects($sig()))->firstWhere('label', 'Sperrprüfung'))->toBeNull();
+    });
+
     test('QC-Statements ergeben die Qualifikation laut Zertifikat', function () use ($sig) {
         $aspect = collect(SignatureVerdict::aspects($sig([
             'signer' => ['qc' => ['compliance' => true, 'qscd' => true, 'esign' => true, 'eseal' => false]],

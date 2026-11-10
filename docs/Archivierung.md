@@ -170,19 +170,27 @@ Die Programme müssen in dem Container installiert sein, in dem der
 | Programm | Zweck | Installation |
 |---|---|---|
 | `ocrmypdf` (mit Ghostscript) | OCR, PDF/A, Optimierung | `apt-get install -y ocrmypdf tesseract-ocr-deu jbig2enc pngquant` |
-| `pyhanko` | Siegel + Zeitstempel | `pip install --break-system-packages pyhanko-cli` |
+| `pyhanko` | Siegel + Zeitstempel | `pyhanko-cli` in eigener venv (siehe unten) |
 | `verapdf` | PDF/A-Validierung | Java + veraPDF-Installer (siehe unten) |
 
 In aktuellen pyHanko-Versionen liegt das Kommandozeilenprogramm im separaten Paket
 `pyhanko-cli`; `pip install pyhanko` allein liefert kein `pyhanko`-Kommando.
+
+Installation in einer eigenen venv: Unter Ubuntu 24.04 scheitert
+`pip install --break-system-packages pyhanko-cli` mit „Cannot uninstall
+cryptography …, RECORD file not found“ (Debian-Paket). Der Symlink nach
+`/usr/local/bin/pyhanko` genügt; die Prüfung findet den venv-Python über die
+Shebang-Zeile.
 
 Ergänzung für das Dockerfile aus [OCR-Installation.md](OCR-Installation.md):
 
 ```dockerfile
 RUN apt-get update \
     && apt-get install -y ocrmypdf tesseract-ocr tesseract-ocr-deu jbig2enc pngquant \
-                          python3-pip default-jre-headless unzip \
-    && pip install --break-system-packages pyhanko-cli \
+                          python3-venv default-jre-headless unzip \
+    && python3 -m venv /opt/pyhanko \
+    && /opt/pyhanko/bin/pip install --no-cache-dir pyhanko-cli \
+    && ln -s /opt/pyhanko/bin/pyhanko /usr/local/bin/pyhanko \
     && curl -fsSL https://software.verapdf.org/releases/verapdf-installer.zip -o /tmp/verapdf.zip \
     && unzip -q /tmp/verapdf.zip -d /tmp/verapdf \
     && printf '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<AutomatedInstallation langpack="eng">\n<com.izforge.izpack.panels.htmlhello.HTMLHelloPanel id="welcome"/>\n<com.izforge.izpack.panels.target.TargetPanel id="install_dir"><installpath>/opt/verapdf</installpath></com.izforge.izpack.panels.target.TargetPanel>\n<com.izforge.izpack.panels.packs.PacksPanel id="sdk_pack_select"><pack index="0" name="veraPDF GUI" selected="false"/><pack index="1" name="veraPDF Mac and *nix Scripts" selected="true"/><pack index="2" name="veraPDF Validation model" selected="true"/><pack index="3" name="veraPDF Documentation" selected="false"/><pack index="4" name="veraPDF Sample Plugins" selected="false"/></com.izforge.izpack.panels.packs.PacksPanel>\n<com.izforge.izpack.panels.install.InstallPanel id="install"/>\n<com.izforge.izpack.panels.finish.FinishPanel id="finish"/>\n</AutomatedInstallation>\n' > /tmp/verapdf/auto-install.xml \

@@ -57,6 +57,7 @@ class SignatureVerdict
             self::coverage($sig),
             self::trust($sig),
             $sig['type'] === 'signature' ? self::timestamp($sig['timestamp'] ?? null) : null,
+            self::revocationFetch($sig['fetch_error'] ?? null),
             self::qualification($sig['signer']['qc'] ?? null),
         ]));
     }
@@ -151,6 +152,16 @@ class SignatureVerdict
             ? self::aspect('Zeitstempel', self::OK, "gültig und vertrauenswürdig ({$tsa})")
             : self::aspect('Zeitstempel', self::WARN, "gültig, Dienst nicht vertrauenswürdig ({$tsa}): "
                 .self::trustProblem($ts['trust_problem'] ?? 'GENERIC'));
+    }
+
+    /**
+     * Der Online-Abruf (OCSP/CRL, Zwischenzertifikate) ist gescheitert; das
+     * Ergebnis beruht dann nur auf den eingebetteten Daten.
+     */
+    private static function revocationFetch(?string $error): ?array
+    {
+        return $error === null ? null : self::aspect('Sperrprüfung', self::WARN,
+            'online nicht möglich, nur mit eingebetteten Daten geprüft ('.$error.')');
     }
 
     /**
