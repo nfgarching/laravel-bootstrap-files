@@ -24,6 +24,18 @@ function fakeArchiveTools(array $exitCodes = [], bool $compliant = true): void
 {
     Process::fake(function (PendingProcess $process) use ($exitCodes, $compliant) {
         $command = $process->command;
+
+        // ConversionOcr ruft ocrmypdf als Shell-String auf:
+        // ocrmypdf … 'QUELLE' 'ZIEL' … --sidecar TEXTDATEI 2>&1
+        if (is_string($command)) {
+            preg_match_all("/'([^']*)'/", $command, $quoted);
+            preg_match('/--sidecar (\S+)/', $command, $sidecar);
+            file_put_contents($quoted[1][1], ARCHIVE_PDFA_PDF);
+            file_put_contents($sidecar[1], 'OCR-Text');
+
+            return Process::result('');
+        }
+
         $binary = $command[0];
         $code = $exitCodes[$binary] ?? 0;
 
@@ -125,6 +137,60 @@ test('ein vorhandenes OCR-PDF/A wird nicht erneut umgewandelt', function () {
 
     expect($file->fresh()->archive()['pdfa']['status'])->toBe('existing');
     Process::assertDidntRun(fn (PendingProcess $process) => $process->command[0] === 'ocrmypdf');
+});
+
+test('nach der Archivierung wird das OCR-PDF gelöscht, die OCR-Textdatei bleibt', function () {
+    fakeArchiveTools();
+    $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
+    $file->setOriginalDocument(true);
+    Storage::disk('local')->put('ocrs/ocr-a.pdf', ARCHIVE_PDFA_PDF);
+    Storage::disk('local')->put('ocrs/ocr-a.txt', 'OCR-Text');
+    $file->mergeJson('generated_conversions', ['ocr' => 'ocrs/ocr-a.pdf']);
+    $file->mergeJson('custom_properties', ['ocr' => ['type' => 'ocrtext', 'disk' => 'local', 'text' => 'ocrs/ocr-a.txt']]);
+
+    ArchivePdf::dispatchSync($file->id);
+
+    $file->refresh();
+    expect($file->archive()['status'])->toBe('archived')
+        ->and($file->ocrPdfPath())->toBeNull()
+        ->and($file->ocr()['text'])->toBe('ocrs/ocr-a.txt');
+    Storage::disk('local')->assertMissing('ocrs/ocr-a.pdf');
+    Storage::disk('local')->assertExists('ocrs/ocr-a.txt');
+    Storage::disk('local')->assertExists($file->archivePdfPath());
+});
+
+test('ohne Archivierung bleibt das OCR-PDF als durchsuchbare Fassung erhalten', function () {
+    fakeArchiveTools();
+    config(['files.archive.enabled' => false]);
+    $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
+    Storage::disk('local')->put('ocrs/ocr-a.pdf', ARCHIVE_PDFA_PDF);
+    $file->mergeJson('generated_conversions', ['ocr' => 'ocrs/ocr-a.pdf']);
+    $file->mergeJson('custom_properties', ['ocr' => ['type' => 'ocrtext', 'disk' => 'local']]);
+
+    ArchivePdf::dispatchSync($file->id);
+
+    $file->refresh();
+    expect($file->archive())->toBeNull()
+        ->and($file->ocrPdfPath())->toBe('ocrs/ocr-a.pdf');
+    Storage::disk('local')->assertExists('ocrs/ocr-a.pdf');
+});
+
+test('ein Neulauf erzeugt das gelöschte OCR-PDF erneut als Ausgangsbasis', function () {
+    fakeArchiveTools();
+    $file = archiveTestPdf(ARCHIVE_PLAIN_PDF);
+    $file->setOriginalDocument(true);
+    // Zustand nach einer früheren Archivierung: OCR-Text da, OCR-PDF gelöscht
+    $file->mergeJson('custom_properties', ['ocr' => ['type' => 'ocrtext', 'disk' => 'local']]);
+
+    ArchivePdf::dispatchSync($file->id);
+
+    $file->refresh();
+    expect($file->archive()['status'])->toBe('archived')
+        ->and($file->archive()['pdfa']['status'])->toBe('existing')
+        ->and($file->ocrPdfPath())->toBeNull()
+        ->and($file->ocr()['type'])->toBe('ocrtext');
+    Process::assertRan(fn (PendingProcess $process) => is_string($process->command)
+        && str_starts_with($process->command, 'ocrmypdf'));
 });
 
 test('bereits signierte PDFs bleiben unverändert', function () {

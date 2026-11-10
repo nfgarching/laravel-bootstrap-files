@@ -13,6 +13,7 @@ use Nfgarching\Files\Services\Archive\PdfaValidator;
 use Nfgarching\Files\Services\Archive\PdfInspector;
 use Nfgarching\Files\Services\Archive\PdfSigner;
 use Nfgarching\Files\Services\Archive\StepResult;
+use Nfgarching\Files\Services\ConversionOcr;
 
 /**
  * Erzeugt die Archivfassung eines PDFs:
@@ -104,9 +105,18 @@ class ArchivePdf implements ShouldQueue
             return;
         }
 
-        // 2. Ausgangsbasis: durchsuchbares OCR-PDF, sonst Original
+        // 2. Ausgangsbasis: durchsuchbares OCR-PDF, sonst Original.
+        // Das OCR-PDF wird nach einer erfolgreichen Archivierung gelöscht; bei
+        // einem Neulauf (files:archive --force) daher OCR erneut ausführen,
+        // sonst verlöre die neue Archivfassung die Textebene.
+        if (! $file->ocrPdfPath() && ($file->ocr()['type'] ?? null) === 'ocrtext') {
+            (new ConversionOcr($file->id))->handle();
+            $file->refresh();
+        }
+
         $current = $original;
-        if (($ocrPath = $file->ocrPdfPath()) && ! $file->ocrFailed()) {
+        $ocrPath = $file->ocrPdfPath();
+        if ($ocrPath && ! $file->ocrFailed()) {
             $current = $this->fetch($file->disk, $ocrPath, 'ocr.pdf') ?? $original;
         }
 
@@ -168,6 +178,13 @@ class ArchivePdf implements ShouldQueue
             }
         }
         Log::channel('files')->info('#'.$file->id.' ArchivePdf: archiviert ('.$target.')');
+
+        // Das OCR-PDF war nur Zwischenstufe – die Archivfassung enthält seine
+        // Textebene. Die OCR-Textdatei (custom_properties.ocr.text) bleibt.
+        if ($ocrPath && $ocrPath !== $target && $ocrPath !== $file->file) {
+            Storage::disk($file->disk)->delete($ocrPath);
+            $file->mergeJson('generated_conversions', ['ocr' => null]);
+        }
 
         // Archivfassung wird Hauptdatei, Original in den Papierkorb (außer „Original Dokument“).
         // Frisch laden – der Schalter kann während der Verarbeitung umgestellt worden sein.

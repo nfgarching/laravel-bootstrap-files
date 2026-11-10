@@ -13,6 +13,11 @@ Original (unverändert) → OCR → PDF/A-2b + Optimierung → Validierung → S
 - Die Archivfassung liegt unter `…/archive/JJJJ-MM/archive-<datei>.pdf`
   (`generated_conversions.archive`).
 - Das Ergebnis jedes Schritts steht in `custom_properties.archive`.
+- Das OCR-PDF (`…/ocrs/ocr-<datei>.pdf`, `generated_conversions.ocr`) ist nur
+  Zwischenstufe: Nach erfolgreicher Archivierung wird es gelöscht, die Archivfassung
+  enthält seine Textebene. Die OCR-Textdatei (`custom_properties.ocr.text`) bleibt.
+  Ohne Archivfassung (abgeschaltet, Fehler) bleibt das OCR-PDF erhalten. Ein Neulauf
+  (`files:archive --force`) führt die OCR erneut aus, wenn das OCR-PDF fehlt.
 - **Bereits signierte PDFs** (beA-Eingänge, Bescheide, signierte Verträge) werden
   nicht verändert – jede Änderung würde ihre Signatur zerstören. Sie erhalten den
   Status `skipped` / `signed_input`.
