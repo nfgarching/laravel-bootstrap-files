@@ -54,6 +54,53 @@ trait HasArchive
         return (bool) ($this->originalDocument()['value'] ?? false);
     }
 
+    /**
+     * Sperre gegen Bearbeiten, Ersetzen und Löschen (custom_properties.locked),
+     * z. B. für extern signierte Dateien: Die abgesetzte Signatur gilt nur für
+     * genau diesen Stand der Datei. OCR-Text und Archivfassung entstehen
+     * weiterhin daneben, die Hauptdatei bleibt unverändert.
+     *
+     * @return array{reason: string, note: ?string, at: string}|null
+     */
+    public function lockInfo(): ?array
+    {
+        $lock = $this->custom_properties['locked'] ?? null;
+
+        return is_array($lock) ? $lock : null;
+    }
+
+    public function isLocked(): bool
+    {
+        return $this->lockInfo() !== null;
+    }
+
+    /**
+     * Sperrt die Datei und kennzeichnet sie als „Original Dokument“.
+     *
+     * @param  string  $reason  Kurzkennung, z. B. 'bea-signature'
+     */
+    public function lock(string $reason, ?string $note = null): void
+    {
+        $this->mergeJson('custom_properties', [
+            'locked' => ['reason' => $reason, 'note' => $note, 'at' => now()->toIso8601String()],
+            'original_document' => [
+                'value' => true,
+                'source' => 'lock',
+                'producer' => $this->originalDocument()['producer'] ?? null,
+            ],
+        ]);
+
+        // Wurde das Original schon ersetzt, kommt es aus dem Papierkorb zurück
+        if ($this->hasTrashedOriginal()) {
+            $this->restoreOriginal();
+        }
+    }
+
+    public function unlock(): void
+    {
+        $this->mergeJson('custom_properties', ['locked' => null]);
+    }
+
     public function isOriginalReplaced(): bool
     {
         return (bool) ($this->archive()['replaced'] ?? false);
@@ -109,6 +156,11 @@ trait HasArchive
      */
     public function setOriginalDocument(bool $value, string $source = 'user'): void
     {
+        // Gesperrte Dateien bleiben „Original Dokument“
+        if (! $value && $this->isLocked()) {
+            return;
+        }
+
         $this->mergeJson('custom_properties', ['original_document' => [
             'value' => $value,
             'source' => $source,
@@ -132,6 +184,10 @@ trait HasArchive
      */
     public function shouldReplaceOriginal(): bool
     {
+        if ($this->isLocked()) {
+            return false;
+        }
+
         return match (config('files.archive.original.replace', 'archive')) {
             'always' => true,
             'never' => false,

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Nfgarching\Files\Events\FileTextExtracted;
 use Nfgarching\Files\Models\File;
 use Nfgarching\Files\Traits\FileTrait;
 
@@ -174,6 +175,9 @@ class ConversionOcr implements ShouldQueue
                     'at' => now()->toIso8601String(),
                 ],
             ]);
+
+            // Volltextsuche u. Ä.: Text liegt vor – auch wenn die Hauptdatei unverändert bleibt
+            FileTextExtracted::dispatch($this->fileitem, $type, $this->fileitem->disk, $ocrTxtPath);
         } else {
             $this->tempFileClean();
             $errtext = $command.'\n'.

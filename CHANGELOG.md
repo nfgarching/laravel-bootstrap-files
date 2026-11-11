@@ -8,6 +8,8 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Added
 
+- Bearbeitungssperre für Dateien: `lock($reason, $note)`, `unlock()`, `isLocked()`, `lockInfo()` (`custom_properties.locked`). Gesperrte Dateien bleiben „Original Dokument“, werden nie durch die Archivfassung ersetzt und lassen sich nicht löschen; OCR-Text und Archivfassung entstehen weiterhin daneben. Gedacht für extern signierte Dateien (z. B. aus dem beA-Package).
+- Event `FileTextExtracted` nach der OCR/Textauslese (Datei, Art, Disk, Pfad der Textdatei) – Anknüpfungspunkt für eine Volltextsuche.
 - Archivierung aller PDFs: PDF/A-2b + Optimierung, Validierung mit veraPDF, PAdES-Siegel mit RFC-3161-Zeitstempel (pyHanko); Job `ArchivePdf` nach OCR, bereits signierte PDFs bleiben unverändert (`docs/Archivierung.md`).
 - Befehle `files:make-test-certificate` (Test-CA + Siegelzertifikat) und `files:archive` (nachträgliche Archivierung, `--check`).
 - Model: `archive()`, `archivePdfPath()`, `isArchiveSigned()`.

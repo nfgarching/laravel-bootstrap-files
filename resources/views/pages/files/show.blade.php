@@ -56,7 +56,12 @@
                         <x-card>
                             <x-slot name="headerLeft">Archiv</x-slot>
                             <x-slot name="headerRight">
-                                <a class="btn btn-sm {{ $file->isOriginalDocument() ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                @if ($file->isLocked())
+                                    <span class="badge text-bg-dark me-1" title="{{ $file->lockInfo()['note'] ?? $file->lockInfo()['reason'] }}">
+                                        <i class="bi bi-lock-fill"></i> gesperrt
+                                    </span>
+                                @endif
+                                <a class="btn btn-sm {{ $file->isOriginalDocument() ? 'btn-primary' : 'btn-outline-secondary' }} {{ $file->isLocked() ? 'disabled' : '' }}"
                                     href="{{ route('files.action', ['id' => $file->id, 'switchTo' => 'ORIGINAL', 'value' => $file->isOriginalDocument() ? 0 : 1]) }}"
                                     title="{{ $file->isOriginalDocument() ? 'Kennzeichnung entfernen (Archivfassung ersetzt das Original)' : 'Als Original Dokument kennzeichnen (Original bleibt Hauptdatei bzw. wird aus dem Papierkorb zurückgeholt)' }}">
                                     <i class="bi bi-{{ $file->isOriginalDocument() ? 'toggle-on' : 'toggle-off' }}"></i>

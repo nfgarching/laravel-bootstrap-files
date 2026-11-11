@@ -115,6 +115,9 @@ class FileController
             case 'ORIGINAL':
                 // Schalter „Original Dokument“; an = Original behalten bzw. aus dem
                 // Papierkorb zurückholen, aus = Original durch Archivfassung ersetzen
+                if ($file->isLocked() && ! $request->boolean('value')) {
+                    return back()->with('message', 'Die Datei ist gesperrt und bleibt Original Dokument: '.($file->lockInfo()['note'] ?? $file->lockInfo()['reason']));
+                }
                 $file->setOriginalDocument($request->boolean('value'));
                 $file->refresh();
 
@@ -305,6 +308,10 @@ class FileController
      */
     public function destroy(File $file): RedirectResponse
     {
+        if ($file->isLocked()) {
+            return back()->with('message', 'Datei „'.Str::limit($file->name, 60).'“ ist gesperrt und wurde nicht gelöscht: '.($file->lockInfo()['note'] ?? $file->lockInfo()['reason']));
+        }
+
         $this->deleteFile($file);
 
         return back()->with('message', 'Datei „'.Str::limit($file->name, 60).'“ gelöscht');
@@ -322,7 +329,8 @@ class FileController
             return back()->with('message', 'Diese Aktion ist noch nicht implementiert');
         }
 
-        $files = File::findMany($validated['checks']);
+        // Gesperrte Dateien (z. B. extern signierte) werden nicht gelöscht
+        [$locked, $files] = File::findMany($validated['checks'])->partition(fn (File $file) => $file->isLocked());
 
         DB::connection((new File)->getConnectionName())->transaction(function () use ($files) {
             $files->each(fn (File $file) => $this->deleteFile($file));
@@ -330,7 +338,9 @@ class FileController
 
         $deleted = $files->count();
 
-        return back()->with('message', $deleted === 1 ? '1 Datei gelöscht' : "$deleted Dateien gelöscht");
+        $skipped = $locked->isEmpty() ? '' : ', '.$locked->count().' gesperrte übersprungen';
+
+        return back()->with('message', ($deleted === 1 ? '1 Datei gelöscht' : "$deleted Dateien gelöscht").$skipped);
     }
 
     private function deleteFile(File $file): void
