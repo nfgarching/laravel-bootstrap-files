@@ -20,8 +20,8 @@ class ImportController
      */
     public function index(Request $request): View
     {
-        $disk = $request->filled('disk') ? $request->string('disk')->toString() : config('path.scan_inbox.disk');
-        $path = $request->filled('path') ? $request->string('path')->toString() : config('path.scan_inbox.path');
+        $disk = $request->filled('disk') ? $request->string('disk')->toString() : config('files.scan_inbox.disk');
+        $path = $request->filled('path') ? $request->string('path')->toString() : config('files.scan_inbox.path');
         $sort = $request->query('sort', 'name');
         $direction = in_array($request->query('direction'), ['asc', 'desc']) ? $request->query('direction') : 'asc';
         $perPage = max(5, (int) $request->query('per_page', 10));

@@ -24,6 +24,7 @@ die Versionierung folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Fixed
 
+- Scan-Eingang (`/disk-inbox`): Standard-Disk und -Pfad werden aus `files.scan_inbox` gelesen (bisher aus dem nicht vorhandenen Schlüssel `path.scan_inbox`).
 - `importFromDisk()`: Prüfsumme (`hash`) wird von der Ziel-Disk gelesen statt von der Quell-Disk (ergab bisher nur die MD5 des Pfades).
 - `importFromDisk()`: nicht vorhandene Spalte `file_type` wird nicht mehr in den Datensatz geschrieben.
 - Temp-Dateien: `tempFileClean()` löscht nur noch die eigenen Dateien statt `/tmp/tmp*` (traf parallel laufende Jobs).
