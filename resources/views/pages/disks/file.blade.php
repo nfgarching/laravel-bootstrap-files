@@ -39,7 +39,7 @@
 
         <div class="col-xl-6">
 
-            <embed src="{{ route('download', "disk=$disk&file=$file") }}"
+            <embed src="{{ route('download', ['disk' => $disk, 'file' => $file]) }}"
                 type="{{ Storage::disk($disk)->mimeType($file) }}" width="100%" height="1000px">
 
         </div>

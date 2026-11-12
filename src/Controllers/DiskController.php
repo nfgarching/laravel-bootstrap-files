@@ -155,7 +155,8 @@ class DiskController
         $file = $request->string('file')->toString();
         $name = $request->string('name', basename($file))->toString();
 
-        if (Storage::disk($disk)->missing($file)) {
+        // Ohne Disk/Pfad würde missing('') die Disk-Wurzel (ein Verzeichnis) finden
+        if ($disk === '' || trim($file, '/') === '' || Storage::disk($disk)->missing($file)) {
             abort(404, "Datei nicht gefunden: {$disk} / {$file}");
         }
 

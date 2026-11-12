@@ -8,7 +8,7 @@
         <dt class="col-3 text-truncate">Dateiname</dt>
         <dl class="col-9 text-truncate">
             {{-- {{ basename(Storage::path($root)) }} --}}
-            <a class="nav-link" href="{{ route('download', "disk=$disk&file=$file") }}" target="_blank">
+            <a class="nav-link" href="{{ route('download', ['disk' => $disk, 'file' => $file]) }}" target="_blank">
                 <i class="bi bi-box-arrow-in-up-right"></i>
                 {{ basename($file) }}
             </a>

@@ -24,7 +24,7 @@
 
         <div class="container">
             <div class="btn-group btn-group-sm">
-                <a class="nav-link" href="{{ route('download', "disk=$file->disk&file=$file->file") }}" target="_blank">
+                <a class="nav-link" href="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}" target="_blank">
                     <i class="bi bi-box-arrow-in-up-right"></i>
                     {{ $file->name }}
                 </a>
@@ -255,7 +255,7 @@
                                 @endphp
                                 <img src="{{ route('download', ['disk' => $imgDisk, 'file' => $imgPath]) }}" class="img-fluid"
                                     alt="{{ $file->name }}">
-                                {{-- <img src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                {{-- <img src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                     type="{{ $file->mime }}" width="100%" height="1000px"> --}}
                             @break
 
@@ -264,47 +264,47 @@
 
                                 {{-- <div class="embed-responsive embed-responsive-1by1">
                                     <iframe class="embed-responsive-item"
-                                        src="{{ route('download', "disk=$file->disk&file={$file->file}") }}" allowfullscreen
+                                        src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}" allowfullscreen
                                         width="100%" height='100%'></iframe>
                                 </div> --}}
 
                                 {{-- ...
                                 <p>File embed</p>
-                                <embed src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                <embed src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                     type="{{ $file->mime }}" width="100%" height="1000px"> --}}
                                 {{-- ...
                                 <p>File object</p>
-                                <object data="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                <object data="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                     type="{{ $file->mime }}" width="100%" height="1000px"></object> --}}
 
-                                <iframe src="{{ route('download', "disk=$file->disk&file={$file->file}") }}#zoom=FitH"
+                                <iframe src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}#zoom=FitH"
                                     height="575px" width="100%"></iframe>
 
                                 {{-- <!-- 21:9 aspect ratio -->
                                 <div class="embed-responsive embed-responsive-21by9">
                                     <iframe class="embed-responsive-item"
-                                        src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                        src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                         width="100%"></iframe>
                                 </div>
 
                                 <!-- 16:9 aspect ratio -->
                                 <div class="embed-responsive embed-responsive-9by16">
                                     <iframe class="embed-responsive-item"
-                                        src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                        src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                         width="100%"></iframe>
                                 </div>
 
                                 <!-- 4:3 aspect ratio -->
                                 <div class="embed-responsive embed-responsive-4by3">
                                     <iframe class="embed-responsive-item"
-                                        src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                        src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                         width="100%"></iframe>
                                 </div>
 
                                 <!-- 1:1 aspect ratio -->
                                 <div class="embed-responsive embed-responsive-1by1">
                                     <iframe class="embed-responsive-item"
-                                        src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                        src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                         width="100%"></iframe>
                                 </div> --}}
                             @break
@@ -312,13 +312,13 @@
                             @case('video')
                                 <p>Video im Video-Tag</p>
                                 <video width="100%" height="1000px" controls>
-                                    <source src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                    <source src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                         type="{{ $file->mime }}">
                                     Your browser does not support the video tag.
                                 </video>
                                 ...
                                 <p>Video embed</p>
-                                <embed src="{{ route('download', "disk=$file->disk&file={$file->file}") }}"
+                                <embed src="{{ route('download', ['disk' => $file->disk, 'file' => $file->file]) }}"
                                     type="{{ $file->mime }}" width="100%" height="1000px">
                             @break
 
