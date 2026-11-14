@@ -1,7 +1,7 @@
 <!-- Items -->
 
 <li class="btn-group nav-item w-100">
-    <x-nav.link :href="route('disks.index')">
+    <x-nav.link :href="route('files.index')">
         {{ __('Storage') }}
     </x-nav.link>
     <a class="nav-link dropdown-toggle ms-auto" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
