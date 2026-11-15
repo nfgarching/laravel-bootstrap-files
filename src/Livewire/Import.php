@@ -4,6 +4,7 @@ namespace Nfgarching\Files\Livewire;
 
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Js;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -208,13 +209,9 @@ class Import extends Component
         );
         event($event);
 
-        if ($this->modelId) {
-            $this->js("window.opener.location.href = '{$event->route}';
-                    window.opener.focus();
-                    window.close();");
-        } else {
-            $this->js("window.open('{$event->route}');window.close();");
-        }
+        // Mit Bezug: aufrufende Seite auf den Datensatz, sonst neuer Tab –
+        // im Popup wie im iframe-Modal (finishPopup() im Layout layout::popup).
+        $this->js('finishPopup('.Js::from($event->route).', '.Js::from((bool) $this->modelId).')');
     }
 
     public function render(): View

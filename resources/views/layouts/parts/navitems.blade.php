@@ -8,14 +8,16 @@
 
 {{-- <x-button.group class="btn-group-sm"> --}}
 
+{{-- Klick => iframe-Modal (xl), SHIFT => Popup, CTRL => Tab --}}
+
 <li class="nav-item">
-    <x-nav.popup :href="route('file-import')" tooltip="Fileimport">
+    <x-nav.popup frame frameSize="xl" :href="route('file-import')" tooltip="Fileimport">
         <i class="bi bi-hdd-network"></i>
     </x-nav.popup>
 </li>
 
 <li class="nav-item">
-    <x-nav.popup :href="route('file-upload')" tooltip="Fileupload">
+    <x-nav.popup frame frameSize="sm" :href="route('file-upload')" tooltip="Fileupload">
         <i class="bi bi-upload"></i>
     </x-nav.popup>
 </li>
