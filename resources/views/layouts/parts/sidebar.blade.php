@@ -2,7 +2,7 @@
 
 <li class="btn-group nav-item w-100">
     <x-nav.link :href="route('files.index')">
-        {{ __('Storage') }}
+        <i class="bi bi-hdd-network"></i> &nbsp {{ __('Storage') }}
     </x-nav.link>
     <a class="nav-link dropdown-toggle ms-auto" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
         aria-label="Menü Anrufe"></a>

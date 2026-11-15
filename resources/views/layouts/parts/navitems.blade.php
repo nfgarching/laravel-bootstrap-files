@@ -17,7 +17,7 @@
 </li>
 
 <li class="nav-item">
-    <x-nav.popup frame frameSize="sm" :href="route('file-upload')" tooltip="Fileupload">
+    <x-nav.popup frame frameSize="lg" :href="route('file-upload')" tooltip="Fileupload">
         <i class="bi bi-upload"></i>
     </x-nav.popup>
 </li>
