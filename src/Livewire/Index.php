@@ -62,6 +62,52 @@ class Index extends Component
         return view('livewire::files.listing', [
             'rows' => $paginated,
             'fileIds' => $paginated->pluck('id')->all(),
+            'shared' => $this->sharedStatus($paginated->getCollection()),
+            'shareAvailable' => self::shareAvailable(),
         ]);
+    }
+
+    /** Download-Portal (nfgarching/share) installiert? */
+    public static function shareAvailable(): bool
+    {
+        return class_exists('Nfgarching\\Share\\Livewire\\ShareComposer');
+    }
+
+    /**
+     * Welche Dateien liegen gerade im Download-Portal? [File-ID => ['until' => …, 'downloads' => n]]
+     *
+     * @param  \Illuminate\Support\Collection<int, File>  $files
+     */
+    protected function sharedStatus($files): array
+    {
+        if (! self::shareAvailable() || $files->isEmpty()) {
+            return [];
+        }
+
+        $shareFile = 'Nfgarching\\Share\\Models\\File';
+        $status = [];
+
+        try {
+            $rows = $shareFile::query()
+                ->with('shipment.recipients')
+                ->whereIn('path', $files->pluck('file')->filter()->all())
+                ->whereHas('shipment', fn ($q) => $q->where('status', 'released')->where('expires_at', '>', now()))
+                ->get();
+        } catch (\Throwable) {
+            return [];
+        }
+
+        foreach ($files as $file) {
+            $match = $rows->first(fn ($row) => $row->disk === $file->disk && $row->path === $file->file);
+
+            if ($match) {
+                $status[$file->id] = [
+                    'until' => $match->shipment->expires_at,
+                    'downloads' => (int) $match->shipment->recipients->sum('downloads'),
+                ];
+            }
+        }
+
+        return $status;
     }
 }

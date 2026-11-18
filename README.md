@@ -228,6 +228,20 @@ Details, Installation und Konfiguration: [docs/Archivierung.md](docs/Archivierun
 
 ---
 
+## Download-Portal (optional)
+
+Ist [nfgarching/share](https://github.com/nfgarching/laravel-bootstrap-share) installiert,
+bietet die Dateiliste:
+
+- an jeder Datei die Aktion **„Über das Download-Portal senden“** (Wolke) – öffnet das
+  Modal des Share-Packages mit dieser Datei;
+- den Hinweis **„Portal · n“** an Dateien, die gerade im Portal bereitliegen (n = Abrufe);
+- im Kopf der Liste **„Anfordern“**, um Unterlagen für den angezeigten Datensatz anzufordern.
+
+Hochgeladene Unterlagen legt das Share-Package über `File::storeUpload()` an (als
+Original) und löst `NewFiles` aus – mit dem Datensatz aus der Anforderung als Besitzer
+und `data.source = 'portal'`.
+
 ## Abhängigkeiten
 
 - `nfgarching/core` — Navigation, Modals, Traits

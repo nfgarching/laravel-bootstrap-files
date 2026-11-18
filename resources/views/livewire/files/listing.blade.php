@@ -5,6 +5,17 @@
         @include('core::listing.card.headerLeft')
 
         <x-slot name="headerRight">
+            @if ($shareAvailable && $model_type && $model_id)
+                {{-- Unterlagen über das Download-Portal anfordern (nfgarching/share) --}}
+                <button type="button" class="btn btn-sm btn-outline-secondary me-1" x-data
+                    title="Unterlagen über das Download-Portal anfordern"
+                    x-on:click="Livewire.dispatch('nfshare-open', { options: @js([
+                        'context' => ['model' => $model_type.':'.$model_id, 'model_type' => $model_type, 'model_id' => $model_id],
+                        'request_upload' => true,
+                    ]) })">
+                    <i class="bi bi-cloud-arrow-up"></i> <span class="d-none d-md-inline">Anfordern</span>
+                </button>
+            @endif
             @if ($rows->isNotEmpty())
                 <x-button.chatbot :data="[
                     'file_ids' => $fileIds,
@@ -43,6 +54,11 @@
                             data-bs-target="#collapse{{ $token . $file->id }}" type="light">
                             {{ Str::limit($file->name, 150) }}
                         </x-button>
+                        @isset($shared[$file->id])
+                            <span class="badge text-bg-info" title="Im Download-Portal bis {{ $shared[$file->id]['until']?->timezone(config('app.timezone'))->format('d.m.Y') }}">
+                                <i class="bi bi-cloud-check"></i> Portal · {{ $shared[$file->id]['downloads'] }}
+                            </span>
+                        @endisset
                     </td>
                     <td nowrap>
                         {{ Number::fileSize($file->size) }}
@@ -82,6 +98,18 @@
                             <x-button.link :href="route('files.show', $file)" type="outline-warning">
                                 <i class="bi bi-envelope"></i>
                             </x-button.link>
+                            @if ($shareAvailable)
+                                {{-- Über das Download-Portal bereitstellen (nfgarching/share) --}}
+                                <button type="button" class="btn btn-outline-primary" x-data
+                                    title="Über das Download-Portal senden"
+                                    x-on:click="Livewire.dispatch('nfshare-open', { options: @js([
+                                        'context' => ['model' => $file->model_type.':'.$file->model_id, 'model_type' => $file->model_type, 'model_id' => $file->model_id],
+                                        'file_ids' => [$file->id],
+                                        'subject' => pathinfo($file->name, PATHINFO_FILENAME),
+                                    ]) })">
+                                    <i class="bi bi-cloud-arrow-up"></i>
+                                </button>
+                            @endif
                             <x-button.link :href="route('files.show', $file)" type="outline-secondary">
                                 <i class="bi bi-files"></i>
                             </x-button.link>
