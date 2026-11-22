@@ -10,7 +10,9 @@
             <h5 class="card-title mb-0">Datei - Upload</h5>
         </x-slot>
 
-        <x-slot name="headerRight"></x-slot>
+        <x-slot name="headerRight">
+            <small class="text-muted">{{ $this->contextLabel ?? 'ohne Zuordnung' }}</small>
+        </x-slot>
 
         {{-- Upload-Formular --}}
         <div class="mb-3" x-data="{ uploading: false, progress: 0 }" x-on:livewire-upload-start="uploading = true"
@@ -67,7 +69,7 @@
                             </span>
                             @if ($file['file_type'] === 'pdf')
                                 <div class="form-check form-switch mb-0 text-nowrap"
-                                    title="{{ $file['producer'] ? 'Erstellt mit: '.$file['producer'] : 'Kein Erzeugerprogramm erkannt' }}">
+                                    title="{{ $file['producer'] ? 'Erstellt mit: ' . $file['producer'] : 'Kein Erzeugerprogramm erkannt' }}">
                                     <input class="form-check-input" type="checkbox" role="switch"
                                         id="original-{{ $file['id'] }}" @checked($file['original'])
                                         wire:click="toggleOriginal({{ $file['id'] }})" wire:loading.attr="disabled">
@@ -102,14 +104,14 @@
     </x-card>
 
     {{-- Debug-Ausgabe --}}
-    <hr>
+    {{-- <hr>
     <small class="text-muted">[-- DEBUG: Livewire State (Debug) --]
         <pre class="mb-0">mmodelType: {{ $modelType }}</pre>
         <pre class="mb-0">modelId: {{ $modelId }}</pre>
         <pre class="mb-0">subject: {{ $subject }}</pre>
         <pre class="mb-0">uploadedFiles: {{ json_encode($uploadedFiles, JSON_PRETTY_PRINT) }}</pre>
         <pre class="mb-0">data: {{ json_encode($data, JSON_PRETTY_PRINT) }}</pre>
-    </small>
+    </small> --}}
 
     {{-- </div>
     </div>

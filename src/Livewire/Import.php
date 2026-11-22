@@ -11,12 +11,14 @@ use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Nfgarching\Files\Events\NewFiles;
+use Nfgarching\Files\Livewire\Concerns\HasContextLabel;
 use Nfgarching\Files\Models\File;
 use Nfgarching\Files\Services\DiskService;
 
 #[Layout('layout::popup')]
 class Import extends Component
 {
+    use HasContextLabel;
     use WithPagination;
 
     public string $disk = '';

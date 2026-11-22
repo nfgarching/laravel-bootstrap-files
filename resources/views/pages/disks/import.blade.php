@@ -3,11 +3,12 @@
     <x-card>
 
         <x-slot name="headerLeft">
-            <h5 class="card-title mb-0">Scan-Posteingang</h5>
+            <h5 class="card-title mb-0">Datei - Import</h5>
         </x-slot>
 
         <x-slot name="headerRight">
-            <small class="text-muted">{{ $disk }}: {{ $path }}</small>
+            {{-- <small class="text-muted">{{ $disk }}: {{ $path }}</small> --}}
+            <small class="text-muted">{{ $this->contextLabel ?? 'ohne Zuordnung' }}</small>
         </x-slot>
 
         {{-- Toolbar --}}
@@ -122,8 +123,9 @@
                                     <input type="text" class="form-control" wire:model="renameName"
                                         wire:keydown.enter="renameFile('{{ $file }}')"
                                         wire:keydown.escape="cancelRename" autofocus>
-                                    <button class="btn btn-outline-success" wire:click="renameFile('{{ $file }}')"
-                                        wire:loading.attr="disabled" title="Speichern">
+                                    <button class="btn btn-outline-success"
+                                        wire:click="renameFile('{{ $file }}')" wire:loading.attr="disabled"
+                                        title="Speichern">
                                         <i class="bi bi-check-lg"></i>
                                     </button>
                                     <button class="btn btn-outline-secondary" wire:click="cancelRename"
@@ -166,8 +168,9 @@
                         </td>
                         <td nowrap width="1%">
                             <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-secondary" wire:click="startRename('{{ $file }}')"
-                                    wire:loading.attr="disabled" title="Umbenennen">
+                                <button class="btn btn-outline-secondary"
+                                    wire:click="startRename('{{ $file }}')" wire:loading.attr="disabled"
+                                    title="Umbenennen">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <button class="btn btn-outline-danger" wire:click="deleteFile('{{ $file }}')"
@@ -195,7 +198,8 @@
                     @disabled($modelId)>
                 <div class="form-check form-switch mb-0 text-nowrap"
                     title="An: Original bleibt Hauptdatei. Aus: geprüfte PDF/A-Fassung ersetzt das Original, Original {{ config('files.archive.original.trash_days', 90) }} Tage im Papierkorb">
-                    <input class="form-check-input" type="checkbox" role="switch" id="import-original" wire:model="original">
+                    <input class="form-check-input" type="checkbox" role="switch" id="import-original"
+                        wire:model="original">
                     <label class="form-check-label small" for="import-original">Original Dokumente</label>
                 </div>
                 <button type="button" class="btn btn-sm btn-primary text-nowrap" wire:click="importFiles"
@@ -211,7 +215,7 @@
     </x-card>
 
     {{-- Debug-Ausgabe --}}
-    <hr>
+    {{-- <hr>
     <small class="text-muted">[-- DEBUG: Livewire State (Debug) --]
         <pre class="mb-0">disk: {{ $disk }}</pre>
         <pre class="mb-0">path: {{ $path }}</pre>
@@ -219,6 +223,6 @@
         <pre class="mb-0">modelId: {{ $modelId }}</pre>
         <pre class="mb-0">subject: {{ $subject }}</pre>
         <pre class="mb-0">data: {{ json_encode($data, JSON_PRETTY_PRINT) }}</pre>
-    </small>
+    </small> --}}
 
 </div>

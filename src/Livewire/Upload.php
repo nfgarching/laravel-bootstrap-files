@@ -11,11 +11,13 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Nfgarching\Files\Enums\FileType;
 use Nfgarching\Files\Events\NewFiles;
+use Nfgarching\Files\Livewire\Concerns\HasContextLabel;
 use Nfgarching\Files\Models\File;
 
 #[Layout('layout::popup')]
 class Upload extends Component
 {
+    use HasContextLabel;
     use WithFileUploads;
 
     public array $data = [];

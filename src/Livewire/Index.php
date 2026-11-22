@@ -2,6 +2,7 @@
 
 namespace Nfgarching\Files\Livewire;
 
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Lazy;
 use Livewire\Component;
 use Nfgarching\Core\Traits\ListingTrait;
@@ -76,7 +77,7 @@ class Index extends Component
     /**
      * Welche Dateien liegen gerade im Download-Portal? [File-ID => ['until' => …, 'downloads' => n]]
      *
-     * @param  \Illuminate\Support\Collection<int, File>  $files
+     * @param  Collection<int, File>  $files
      */
     protected function sharedStatus($files): array
     {
