@@ -40,7 +40,7 @@ class Import extends Component
 
     public string $direction = 'desc';
 
-    public int $perPage = 10;
+    public int $perPage = 8;
 
     public bool $selectAll = false;
 
